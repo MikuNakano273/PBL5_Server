@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//mnt/d/**)",
+      "Read(//mnt/d/PBL5_Server/**)"
+    ]
+  }
+}

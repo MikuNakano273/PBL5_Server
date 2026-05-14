@@ -1,13 +1,17 @@
 services:
   api:
     build:
-      context: ./Server
+      context: ./api
       dockerfile: Dockerfile
     container_name: pbl5-api
     env_file:
       - .env
+    environment:
+      MONGODB_URI: mongodb://admin:admin123@mongo:27017/pbl5?authSource=admin
+      REDIS_HOST: redis
+      MINIO_ENDPOINT: minio:9000
     ports:
-      - "3000:3000"
+      - "8000:8000"
     depends_on:
       mongo:
         condition: service_healthy
@@ -16,10 +20,16 @@ services:
       minio:
         condition: service_started
     volumes:
-      - ./Server:/app
-      - /app/node_modules
-    command: npm run start:dev
+      - ./api:/api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     restart: unless-stopped
+    networks:
+      - pbl5-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=2).read()"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
 
   worker:
     build:
@@ -28,6 +38,12 @@ services:
     container_name: pbl5-worker
     env_file:
       - .env
+    environment:
+      MONGODB_URI: mongodb://admin:admin123@mongo:27017/pbl5?authSource=admin
+      REDIS_HOST: redis
+      MINIO_ENDPOINT: minio:9000
+      INTERNAL_API_URL: http://api:8000
+      YOLO_CONFIDENCE_THRESHOLD: 0.35
     depends_on:
       mongo:
         condition: service_healthy
@@ -36,12 +52,14 @@ services:
       minio:
         condition: service_started
       api:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./worker:/worker
       - yolo_models:/models
     command: python -m app.main
     restart: unless-stopped
+    networks:
+      - pbl5-network
 
   mongo:
     image: mongo:7
@@ -55,34 +73,25 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    networks:
+      - pbl5-network
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  mongo-express:
-    image: mongo-express:1.0.2
-    container_name: pbl5-mongo-express
-    restart: unless-stopped
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
-      ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongo:27017/
-      ME_CONFIG_BASICAUTH: false
-    depends_on:
-      - mongo
-    ports:
-      - "8081:8081"
-
   redis:
     image: redis:7-alpine
     container_name: pbl5-redis
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - pbl5-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -102,10 +111,19 @@ services:
     volumes:
       - minio_data:/data
     restart: unless-stopped
+    networks:
+      - pbl5-network
 
+networks:
+  pbl5-network:
+    driver: bridge
 
 volumes:
   mongo_data:
+    driver: local
   redis_data:
+    driver: local
   minio_data:
+    driver: local
   yolo_models:
+    driver: local

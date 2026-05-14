@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "name": "pbl5-server-v3",
+  "description": "PBL5 Server v3 uses Python FastAPI, RQ worker, MongoDB, Redis, and MinIO. Node/NestJS is legacy only.",
+  "scripts": {
+    "test:api": "python -m unittest discover api/tests",
+    "test:worker": "python -m unittest discover worker/tests"
+  }
+}

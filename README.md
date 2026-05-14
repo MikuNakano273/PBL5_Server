@@ -1,35 +1,76 @@
-# PBL5 Server Starter
+# PBL5 Server v3
 
-Bộ khởi tạo này dành cho dự án **PBL5 - Gậy thông minh cho người mù**.
+Backend for the PBL5 smart cane MVP, aligned with `docs/PBL5_Server_Spec_v3_Minimal.md`.
 
-Thành phần chính:
-- `server/`: NestJS + TypeScript + MongoDB + Redis + Socket.IO + BullMQ
-- `worker/`: Python YOLO worker xử lý ảnh bất đồng bộ
-- `docker-compose.yml`: môi trường local/dev
-- `.env.example`: biến môi trường mẫu
-- `docs/IMPLEMENTATION_PLAN.md`: checklist triển khai rất chi tiết
+## Stack
 
-Luồng chính:
-1. Gậy gửi metadata ảnh, GPS, telemetry.
-2. Server lưu MongoDB, cập nhật live state, đẩy realtime.
-3. Ảnh được lưu MinIO, job được đẩy vào Redis/BullMQ.
-4. Python worker lấy job, chạy YOLOv8, ghi kết quả về MongoDB và callback về API.
-5. Server sinh cảnh báo, gửi push notification cho guardian, cập nhật dashboard.
+- API: Python 3.11, FastAPI
+- Worker: Python, RQ, YOLO/Ultralytics
+- Database: MongoDB
+- Queue/cache: Redis + RQ queue `vision-jobs`
+- Object storage: MinIO bucket `pbl5-images`
 
-## Chạy local
+Legacy assumptions such as NestJS, Socket.IO, BullMQ, `notification_tokens`, `alert_receivers`, `audit_logs`, and `daily_alert_stats` are not part of the v3 minimal implementation.
+
+## Local Run
 
 ```bash
 cp .env.example .env
-
-docker compose up --build
+python -m pip install -r api/requirements.txt
+python -m pip install -r worker/requirements.txt
+docker compose up -d mongo redis minio
 ```
 
-API server mặc định: `http://localhost:3000`
-MinIO console: `http://localhost:9001`
-Mongo Express: `http://localhost:8081`
+Run API:
 
-## Ghi chú
+```bash
+$env:PYTHONPATH='D:\PBL5_Server\api'
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-- Ảnh **không** lưu trong MongoDB, chỉ lưu object key / URL.
-- Dashboard app nên ưu tiên đọc collection `user_live_status` để phản hồi nhanh.
-- Worker AI nên scale ngang độc lập với API server.
+Run worker:
+
+```bash
+$env:PYTHONPATH='D:\PBL5_Server\worker'
+python -m app.main
+```
+
+Useful URLs:
+
+- API health: `http://localhost:8000/api/health`
+- Swagger/OpenAPI: `http://localhost:8000/docs`
+- MinIO console: `http://localhost:9001`
+
+## Main Workflows
+
+Mobile auth uses installation-aware tokens:
+
+- `POST /api/mobile/v1/auth/login`
+- `POST /api/mobile/v1/auth/refresh`
+- `POST /api/mobile/v1/auth/logout`
+- `GET /api/mobile/v1/installations/me/accounts`
+- `POST /api/mobile/v1/installations/me/switch-account`
+
+One physical phone is represented by `mobile_installations`. Multiple accounts can be attached via `installation_accounts`; only one account is active at a time, but the notification inbox is shared by installation.
+
+Cane/device flow:
+
+- Cane authenticates with `X-Device-Code` and `X-Device-Secret`
+- GPS, distance, heartbeat, image metadata, and uploaded image are accepted under `/api/cane/v1`
+- Image upload queues an RQ job with `request_id`, `device_id`, `blind_user_id`, object key, and timestamp
+- Worker downloads the image from MinIO, runs YOLO, and callbacks to `/api/internal/v1/vision/results`
+- API stores `vision_results`, updates `image_requests`, creates alerts, fans out notification inbox rows, and sends push through installation tokens when present
+
+Admin:
+
+- `POST /api/admin/v1/auth/login` issues admin-scoped JWTs with `token_use=admin`
+- Admin APIs cover users, devices, device assignment, image requests, and alerts
+
+More detail: `docs/workflows.md`.
+
+## Verification
+
+```bash
+$env:PYTHONPATH='D:\PBL5_Server\api'; python -m unittest discover api\tests
+$env:PYTHONPATH='D:\PBL5_Server\worker'; python -m unittest discover worker\tests
+```

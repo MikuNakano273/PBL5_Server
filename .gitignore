@@ -1,0 +1,71 @@
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache / test artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.hypothesis/
+.coverage
+.coverage.*
+coverage/
+htmlcov/
+
+# Build / packaging outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Node dependencies and build output
+node_modules/
+**/node_modules/
+.npm/
+.pnpm-store/
+
+# Local environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*.local
+
+# Logs and runtime files
+*.log
+logs/
+tmp/
+temp/
+uploads/
+media/
+*.pid
+*.seed
+*.sqlite
+*.sqlite3
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.code-workspace
+
+# Optional local tooling state
+.claude/
+.codex/
+.cursor/
+
+# Legacy top-level artifacts from the old implementation
+Server/
+nginx/
+AI/

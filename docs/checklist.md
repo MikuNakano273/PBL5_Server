@@ -16,9 +16,9 @@
 
 ## Phase 2
 - [x] `P2-01` Bộ API `me/profile` đọc, sửa profile và đổi mật khẩu hoạt động.
-- [x] `P2-02` API `care_links` hoạt động và chặn truy cập sai quan hệ family/blind.
+- [x] `P2-02` `care_links` đã bị loại khỏi active API; user chỉ truy cập dữ liệu của chính `user_id`.
 - [x] `P2-03` Dashboard endpoint trả được dữ liệu tổng hợp theo `user_live_status`, alerts và device state.
-- [x] `P2-04` Các API đọc dữ liệu blind user đầy đủ: devices, locations, alerts today/history/recent, alert detail.
+- [x] `P2-04` Các API đọc dữ liệu user đầy đủ: devices, locations, alerts today/history/recent, alert detail.
 - [x] `P2-05` Notification inbox theo installation list/mark-read được và dùng đúng `notification_events` + `installation_notifications`.
 - [x] `P2-06` Push token được lưu theo installation; list accounts và switch active account đúng rule `is_active`.
 

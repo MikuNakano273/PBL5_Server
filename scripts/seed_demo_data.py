@@ -14,8 +14,7 @@ from app.core.database import close_mongo, connect_mongo
 
 
 DEMO_PASSWORD = "password123"
-BLIND_USER_ID = "blind-1"
-FAMILY_USER_ID = "family-1"
+USER_ID = "user-1"
 ADMIN_USER_ID = "admin-1"
 DEVICE_ID = "device-1"
 
@@ -30,29 +29,13 @@ def seed_users(db, now: datetime) -> None:
 
     upsert(
         users,
-        BLIND_USER_ID,
+        USER_ID,
         {
-            "email": "blind@example.com",
+            "email": "user@example.com",
             "password_hash": password_hash,
-            "full_name": "Demo Blind User",
+            "full_name": "Demo User",
             "phone": "0900000001",
             "role": "user",
-            "user_type": "blind",
-            "status": "active",
-            "created_at": now,
-            "updated_at": now,
-        },
-    )
-    upsert(
-        users,
-        FAMILY_USER_ID,
-        {
-            "email": "family@example.com",
-            "password_hash": password_hash,
-            "full_name": "Demo Family User",
-            "phone": "0900000002",
-            "role": "user",
-            "user_type": "family",
             "status": "active",
             "created_at": now,
             "updated_at": now,
@@ -65,24 +48,8 @@ def seed_users(db, now: datetime) -> None:
             "email": "admin@example.com",
             "password_hash": password_hash,
             "full_name": "Demo Admin",
-            "phone": "0900000003",
+            "phone": "0900000002",
             "role": "admin",
-            "user_type": None,
-            "status": "active",
-            "created_at": now,
-            "updated_at": now,
-        },
-    )
-
-
-def seed_care_links(db, now: datetime) -> None:
-    upsert(
-        db["care_links"],
-        "care-link-1",
-        {
-            "blind_user_id": BLIND_USER_ID,
-            "family_user_id": FAMILY_USER_ID,
-            "relation": "family",
             "status": "active",
             "created_at": now,
             "updated_at": now,
@@ -97,7 +64,7 @@ def seed_device_and_status(db, now: datetime) -> None:
         {
             "device_code": "STICK-001",
             "serial_number": "DEMO-STICK-001",
-            "owner_blind_user_id": BLIND_USER_ID,
+            "owner_user_id": USER_ID,
             "name": "Demo Smart Cane",
             "firmware_version": "demo-1.0.0",
             "status": "online",
@@ -112,7 +79,7 @@ def seed_device_and_status(db, now: datetime) -> None:
         db["user_live_status"],
         "live-status-1",
         {
-            "blind_user_id": BLIND_USER_ID,
+            "user_id": USER_ID,
             "device_id": DEVICE_ID,
             "current_safety_status": "warning",
             "nearest_distance_cm": 85.0,
@@ -139,7 +106,7 @@ def seed_gps_logs(db, now: datetime) -> None:
             document_id,
             {
                 "device_id": DEVICE_ID,
-                "blind_user_id": BLIND_USER_ID,
+                "user_id": USER_ID,
                 "lat": lat,
                 "lng": lng,
                 "location": {"type": "Point", "coordinates": [lng, lat]},
@@ -186,7 +153,7 @@ def seed_alerts(db, now: datetime) -> None:
             db["alerts"],
             document_id,
             {
-                "blind_user_id": BLIND_USER_ID,
+                "user_id": USER_ID,
                 "device_id": DEVICE_ID,
                 "image_request_id": None,
                 "alert_type": alert_type,
@@ -207,7 +174,6 @@ def seed_demo_data() -> None:
     db = connect_mongo()
     now = datetime.now(UTC)
     seed_users(db, now)
-    seed_care_links(db, now)
     seed_device_and_status(db, now)
     seed_gps_logs(db, now)
     seed_alerts(db, now)
@@ -217,6 +183,5 @@ def seed_demo_data() -> None:
 if __name__ == "__main__":
     seed_demo_data()
     print("Seeded demo data.")
-    print("Mobile login: blind@example.com / password123")
-    print("Family login: family@example.com / password123")
+    print("Mobile login: user@example.com / password123")
     print("Admin login: admin@example.com / password123")

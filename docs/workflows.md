@@ -19,12 +19,9 @@ Alerts produce notification events and fanout rows:
 
 1. `AlertService` creates an `alerts` document unless a recent duplicate exists.
 2. `NotificationService` creates one `notification_events` document.
-3. It resolves related users:
-   - the blind user who owns the device
-   - family users with active `care_links`
-4. It resolves every installation containing those users through `installation_accounts`.
-5. It creates one `installation_notifications` row per installation.
-6. If `mobile_installations.push_token` is present, the push sender is invoked for that installation.
+3. It resolves every installation containing the alert's `user_id` through `installation_accounts`.
+4. It creates one `installation_notifications` row per installation.
+5. If `mobile_installations.push_token` is present, the push sender is invoked for that installation.
 
 Mobile reads the shared inbox with:
 

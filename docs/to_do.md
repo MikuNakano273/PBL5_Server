@@ -5,7 +5,7 @@
 - `docs/IMPLEMENTATION_PLAN.md` chỉ giữ lại các ý còn phù hợp với spec v3 minimal; các phần cũ về NestJS, Socket.IO, `alert_receivers`, `notification_tokens`, `audit_logs`, `daily_alert_stats` không còn là chuẩn triển khai.
 - Target backend chốt: `Python 3.11 + FastAPI` cho API, `Python worker + YOLO` cho xử lý ảnh, `MongoDB + Redis + MinIO` cho hạ tầng.
 - Queue ưu tiên: `Redis + RQ`; `Celery` chỉ là phương án thay thế nếu có lý do rõ ràng.
-- Actor model chốt: `role = admin | user`; `user_type = blind | family`.
+- Actor model chốt: `role = admin | user`; không còn `user_type`.
 - Workflow bắt buộc: một máy có nhiều account, switch account không cần nhập lại mật khẩu, notification inbox dùng chung theo `installation`.
 - Mọi task dưới đây dùng mã cố định để map 1-1 sang `docs/checklist.md`.
 
@@ -27,9 +27,9 @@
 
 ## PHASE 2 - Lõi nghiệp vụ mobile
 - [x] `P2-01` Dựng `me/profile` API: `GET /api/mobile/v1/me`, `PATCH /api/mobile/v1/me`, `POST /api/mobile/v1/me/change-password`.
-- [x] `P2-02` Dựng `care_links` API và rule phân quyền để family chỉ thấy blind user có liên kết hợp lệ.
-- [x] `P2-03` Dựng `DashboardService` và `GET /api/mobile/v1/dashboard/{blind_user_id}` theo dữ liệu tổng hợp từ `user_live_status`, alerts, devices.
-- [x] `P2-04` Dựng toàn bộ read API cho blind user data: devices, locations, alerts today, alert history, recent alerts, alert detail.
+- [x] `P2-02` Bỏ `care_links`; user chỉ truy cập dữ liệu của chính `user_id`.
+- [x] `P2-03` Dựng `DashboardService` và `GET /api/mobile/v1/dashboard/{user_id}` theo dữ liệu tổng hợp từ `user_live_status`, alerts, devices.
+- [x] `P2-04` Dựng toàn bộ read API cho user data: devices, locations, alerts today, alert history, recent alerts, alert detail.
 - [x] `P2-05` Dựng notification workflow trong app: tạo/list/mark read cho `notification_events` và `installation_notifications`.
 - [x] `P2-06` Hoàn tất thao tác theo installation ở mobile: lưu `push_token` theo máy, list accounts của installation, switch active account đúng rule `is_active`.
 
@@ -39,10 +39,10 @@
 - [x] `P3-03` Dựng distance ingest: `POST /api/cane/v1/telemetry/distance`, áp dụng sampling, cập nhật safety status và live status.
 - [x] `P3-04` Dựng heartbeat endpoint và cập nhật `devices.last_seen_at`, `user_live_status.last_seen_at`, phục vụ offline detection.
 - [x] `P3-05` Dựng image request flow: `POST /api/cane/v1/requests`, `POST /api/cane/v1/requests/{request_id}/image`, quản lý state `created -> uploaded -> queued -> processing -> done/failed`.
-- [x] `P3-06` Nối `MinIO` và API device config: lưu object path ảnh, trả `GET /api/cane/v1/devices/me/config`, chuẩn hóa lookup thiết bị theo owner blind user.
+- [x] `P3-06` Nối `MinIO` và API device config: lưu object path ảnh, trả `GET /api/cane/v1/devices/me/config`, chuẩn hóa lookup thiết bị theo `owner_user_id`.
 
 ## PHASE 4 - Worker YOLO
-- [x] `P4-01` Dựng queue `Redis + RQ` cho `vision-jobs`, payload job tối thiểu phải đủ `request_id`, `device_id`, `blind_user_id`, object key, timestamp.
+- [x] `P4-01` Dựng queue `Redis + RQ` cho `vision-jobs`, payload job tối thiểu phải đủ `request_id`, `device_id`, `user_id`, object key, timestamp.
 - [x] `P4-02` Dựng Python worker YOLO: lấy job, tải ảnh từ MinIO, chạy model, build payload kết quả, xử lý retry/backoff theo spec.
 - [x] `P4-03` Dựng internal API có auth riêng: `POST /api/internal/v1/vision/results` và `POST /api/internal/v1/vision/retry/{request_id}`.
 - [x] `P4-04` Dựng `VisionResultService`: lưu `vision_results`, cập nhật trạng thái `image_requests`, suy ra `risk_level`, sinh `summary_text`.

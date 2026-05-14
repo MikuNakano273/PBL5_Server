@@ -10,6 +10,7 @@ The old Node/NestJS implementation under `Server/` and the old `nginx/` reverse-
 
 Legacy collections remain documented only as excluded scope in `api/app/models/registry.py`:
 
+- `care_links`
 - `daily_alert_stats`
 - `audit_logs`
 - `alert_receivers`

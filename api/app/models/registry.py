@@ -29,6 +29,7 @@ ACTIVE_COLLECTION_INDEXES: dict[str, list] = {
 }
 
 LEGACY_COLLECTIONS = [
+    "care_links",
     "daily_alert_stats",
     "audit_logs",
     "alert_receivers",

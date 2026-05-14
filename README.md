@@ -1,6 +1,6 @@
 # PBL5 Server v3
 
-Backend for the PBL5 smart cane MVP, aligned with `docs/PBL5_Server_Spec_v3_Minimal.md`.
+Backend for the PBL5 smart cane MVP, aligned with the admin/user domain model in `docs/superpowers/specs/2026-05-14-admin-user-auth-domain-design.md`.
 
 ## Stack
 
@@ -57,7 +57,7 @@ Cane/device flow:
 
 - Cane authenticates with `X-Device-Code` and `X-Device-Secret`
 - GPS, distance, heartbeat, image metadata, and uploaded image are accepted under `/api/cane/v1`
-- Image upload queues an RQ job with `request_id`, `device_id`, `blind_user_id`, object key, and timestamp
+- Image upload queues an RQ job with `request_id`, `device_id`, `user_id`, object key, and timestamp
 - Worker downloads the image from MinIO, runs YOLO, and callbacks to `/api/internal/v1/vision/results`
 - API stores `vision_results`, updates `image_requests`, creates alerts, fans out notification inbox rows, and sends push through installation tokens when present
 
@@ -65,6 +65,8 @@ Admin:
 
 - `POST /api/admin/v1/auth/login` issues admin-scoped JWTs with `token_use=admin`
 - Admin APIs cover users, devices, device assignment, image requests, and alerts
+
+Actors are limited to `admin` and `user`. A `user` account manages one cane. Phone installations may contain multiple user accounts, and those accounts share one installation-scoped notification inbox.
 
 More detail: `docs/workflows.md`.
 

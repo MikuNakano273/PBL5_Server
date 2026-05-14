@@ -28,6 +28,7 @@ class VisionResultService:
         processed_at = datetime.now(UTC)
         result_payload = {
             "image_request_id": payload.request_id,
+            "user_id": image_request["user_id"],
             "model_name": payload.model_name,
             "model_version": payload.model_version,
             "objects": payload.objects,

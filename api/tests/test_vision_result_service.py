@@ -74,6 +74,7 @@ class VisionResultServiceTest(TestCase):
         saved = service.vision_result_repository.saved_payload
         self.assertEqual(result["id"], "vision-result-1")
         self.assertEqual(saved["image_request_id"], "request-1")
+        self.assertEqual(saved["user_id"], "user-1")
         self.assertEqual(saved["risk_level"], "high")
         self.assertIn("chair", saved["summary_text"])
         self.assertIn("65", saved["summary_text"])

@@ -28,6 +28,7 @@ class VisionJobProcessor:
 
     def process(self, payload: dict[str, Any]) -> dict[str, Any]:
         request_id = payload["request_id"]
+        user_id = payload["user_id"]
         object_key = payload["object_key"]
         self.image_requests.mark_processing(request_id)
 
@@ -37,7 +38,7 @@ class VisionJobProcessor:
             os.close(fd)
             self.storage.download_image(object_key, temp_path)
             result = self.yolo.infer(temp_path)
-            result_payload = self._build_result_payload(request_id, result)
+            result_payload = self._build_result_payload(request_id, user_id, result)
             self.vision_results.save_if_absent(result_payload)
             self.image_requests.mark_done(request_id)
             self.callback.send_result(self._build_callback_payload(request_id, result_payload))
@@ -49,9 +50,10 @@ class VisionJobProcessor:
             if temp_path and os.path.exists(temp_path):
                 os.unlink(temp_path)
 
-    def _build_result_payload(self, request_id: str, result: dict[str, Any]) -> dict[str, Any]:
+    def _build_result_payload(self, request_id: str, user_id: str, result: dict[str, Any]) -> dict[str, Any]:
         return {
             "image_request_id": request_id,
+            "user_id": user_id,
             "model_name": result.get("model_name", "yolov8s"),
             "model_version": result.get("model_version", "1.0"),
             "objects": result.get("objects", []),
@@ -64,6 +66,7 @@ class VisionJobProcessor:
     def _build_callback_payload(self, request_id: str, result_payload: dict[str, Any]) -> dict[str, Any]:
         return {
             "request_id": request_id,
+            "user_id": result_payload["user_id"],
             "model_name": result_payload["model_name"],
             "model_version": result_payload["model_version"],
             "objects": result_payload["objects"],

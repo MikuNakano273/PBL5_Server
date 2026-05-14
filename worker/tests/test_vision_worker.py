@@ -83,18 +83,20 @@ class VisionJobProcessorTest(TestCase):
                 {
                     "request_id": "request-1",
                     "device_id": "device-1",
-                    "blind_user_id": "blind-1",
-                    "object_key": "raw/blind-1/device-1/request-1.jpg",
+                    "user_id": "user-1",
+                    "object_key": "raw/user-1/device-1/request-1.jpg",
                     "timestamp": "2026-04-25T11:00:00+00:00",
                 }
             )
 
         self.assertEqual(image_requests.states, [("processing", "request-1"), ("done", "request-1")])
-        self.assertEqual(storage.downloaded[0], "raw/blind-1/device-1/request-1.jpg")
+        self.assertEqual(storage.downloaded[0], "raw/user-1/device-1/request-1.jpg")
         self.assertEqual(vision_results.saved["image_request_id"], "request-1")
+        self.assertEqual(vision_results.saved["user_id"], "user-1")
         self.assertEqual(vision_results.saved["model_name"], "yolov8s")
         self.assertEqual(vision_results.saved["objects"][0]["label"], "chair")
         self.assertEqual(callback.sent["request_id"], "request-1")
+        self.assertEqual(callback.sent["user_id"], "user-1")
         self.assertEqual(result["risk_level"], "high")
 
     def test_process_marks_failed_and_reraises_for_rq_retry(self):
@@ -112,8 +114,8 @@ class VisionJobProcessorTest(TestCase):
                 {
                     "request_id": "request-1",
                     "device_id": "device-1",
-                    "blind_user_id": "blind-1",
-                    "object_key": "raw/blind-1/device-1/request-1.jpg",
+                    "user_id": "user-1",
+                    "object_key": "raw/user-1/device-1/request-1.jpg",
                     "timestamp": "2026-04-25T11:00:00+00:00",
                 }
             )

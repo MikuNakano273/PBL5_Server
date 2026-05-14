@@ -1,7 +1,7 @@
 import asyncio
 from unittest import TestCase
 
-from app.api.deps import get_current_admin_context
+from app.api.deps import get_current_admin_context, get_current_auth_context
 from app.api.routers.admin import admin_login
 from app.common.exceptions.base import AppError
 from app.common.schemas.admin import AdminLoginRequest
@@ -76,6 +76,24 @@ class AdminAuthTest(TestCase):
 
         self.assertEqual(error.exception.status_code, 403)
 
+    def test_mobile_login_rejects_admin_user(self):
+        service = AuthService.__new__(AuthService)
+        service.user_repository = _UserRepo(
+            {
+                "_id": "admin-1",
+                "email": "admin@example.com",
+                "password_hash": hash_password("password123"),
+                "role": "admin",
+                "status": "active",
+            }
+        )
+        service.refresh_token_repository = _RefreshTokenRepo()
+
+        with self.assertRaises(AppError) as error:
+            service.login("admin@example.com", "password123", installation_id="inst-1")
+
+        self.assertEqual(error.exception.status_code, 403)
+
     def test_admin_guard_accepts_only_admin_scoped_token(self):
         token = create_access_token("admin-1", {"role": "admin", "token_use": "admin"})
 
@@ -118,5 +136,14 @@ class AdminAuthTest(TestCase):
 
         self.assertEqual(payload["sub"], "user-1")
         self.assertEqual(payload["role"], "user")
+        self.assertEqual(payload["token_use"], "mobile")
         self.assertEqual(payload["installation_id"], "inst-1")
         self.assertNotIn("user_type", payload)
+
+    def test_mobile_auth_context_rejects_admin_token(self):
+        token = create_access_token("admin-1", {"role": "admin", "token_use": "admin"})
+
+        with self.assertRaises(AppError) as error:
+            get_current_auth_context(authorization=f"Bearer {token}")
+
+        self.assertEqual(error.exception.status_code, 403)

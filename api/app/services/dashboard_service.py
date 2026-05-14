@@ -67,8 +67,6 @@ class DashboardService:
         return self._serialize_alert(alert)
 
     def _assert_can_access_user(self, auth_context: AuthContext, user_id: str) -> None:
-        if auth_context.role == 'admin':
-            return
         if auth_context.role == 'user' and auth_context.user_id == user_id:
             return
         raise AppError(code='dashboard_forbidden', message='You cannot access this user data.', status_code=403)

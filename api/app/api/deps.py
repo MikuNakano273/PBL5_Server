@@ -81,6 +81,8 @@ def get_current_auth_context(authorization: str | None = Header(default=None)) -
         raise AppError(code="missing_authorization", message="Authorization bearer token is required.", status_code=401)
     token = authorization.removeprefix("Bearer ").strip()
     payload = decode_token(token)
+    if payload.get("role") != "user" or payload.get("token_use") != "mobile":
+        raise AppError(code="mobile_forbidden", message="Mobile user token is required.", status_code=403)
     return AuthContext(
         user_id=payload["sub"],
         role=payload["role"],

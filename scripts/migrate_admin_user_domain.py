@@ -14,7 +14,13 @@ from app.core.config import get_settings
 
 
 def rename_field(collection, old_name: str, new_name: str) -> int:
-    result = collection.update_many({old_name: {"$exists": True}}, {"$rename": {old_name: new_name}})
+    conflict_count = collection.count_documents({old_name: {"$exists": True}, new_name: {"$exists": True}})
+    if conflict_count:
+        print(f"{collection.name}: skipped {conflict_count} documents with both {old_name} and {new_name}")
+    result = collection.update_many(
+        {old_name: {"$exists": True}, new_name: {"$exists": False}},
+        {"$rename": {old_name: new_name}},
+    )
     return result.modified_count
 
 

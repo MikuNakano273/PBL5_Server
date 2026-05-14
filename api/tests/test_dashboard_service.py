@@ -136,6 +136,17 @@ class DashboardServiceTest(TestCase):
 
         self.assertEqual(error.exception.status_code, 403)
 
+    def test_admin_role_cannot_use_mobile_dashboard_service(self):
+        service = self._service()
+
+        with self.assertRaises(AppError) as error:
+            service.get_dashboard(
+                "user-1",
+                AuthContext(user_id="admin-1", role="admin", installation_id=None),
+            )
+
+        self.assertEqual(error.exception.status_code, 403)
+
     def test_user_read_apis_return_serialized_devices_locations_alerts_and_detail(self):
         recorded_at = datetime(2026, 4, 25, 8, 0, tzinfo=UTC)
         triggered_at = datetime(2026, 4, 25, 8, 1, tzinfo=UTC)

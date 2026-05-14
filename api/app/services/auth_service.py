@@ -30,6 +30,7 @@ class AuthService:
 
     def login(self, email: str, password: str, installation_id: str | None = None) -> TokenPairResponse:
         user = self.authenticate_user(email, password)
+        self._assert_mobile_user(user)
         return self._issue_token_pair(user, installation_id)
 
     def refresh(self, refresh_token: str) -> TokenPairResponse:
@@ -64,12 +65,18 @@ class AuthService:
         user = self.user_repository.get_by_id(user_id)
         if user is None:
             raise AppError(code="user_not_found", message="User not found.", status_code=404)
+        self._assert_mobile_user(user)
         return self._issue_token_pair(user, installation_id)
+
+    def _assert_mobile_user(self, user: dict[str, Any]) -> None:
+        if user.get("role") != "user":
+            raise AppError(code="mobile_forbidden", message="Mobile login requires a user account.", status_code=403)
 
     def _issue_token_pair(self, user: dict[str, Any], installation_id: str | None) -> TokenPairResponse:
         user_id = str(user["_id"])
         claims = {
             "role": user["role"],
+            "token_use": "mobile",
             "installation_id": installation_id,
         }
         access_token = create_access_token(subject=user_id, claims=claims)

@@ -1,4 +1,4 @@
-﻿from pydantic import BaseModel
+from pydantic import BaseModel
 
 
 class DashboardAlertItem(BaseModel):
@@ -10,7 +10,7 @@ class DashboardAlertItem(BaseModel):
 
 
 class DashboardResponse(BaseModel):
-    blind_user_id: str
+    user_id: str
     is_safe: bool
     current_safety_status: str | None = None
     nearest_distance_cm: float | None = None

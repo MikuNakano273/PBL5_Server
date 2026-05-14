@@ -1,4 +1,4 @@
-﻿from typing import Any
+from typing import Any
 
 from app.repositories.base import BaseRepository
 
@@ -11,8 +11,8 @@ class GpsRepository(BaseRepository):
         inserted_id = self.create_one(payload)
         return str(inserted_id)
 
-    def list_for_blind_user(self, blind_user_id: str, limit: int = 20) -> list[dict[str, Any]]:
-        return list(self.collection.find({'blind_user_id': blind_user_id}).sort('recorded_at', -1).limit(limit))
+    def list_for_user(self, user_id: str, limit: int = 20) -> list[dict[str, Any]]:
+        return list(self.collection.find({'user_id': user_id}).sort('recorded_at', -1).limit(limit))
 
     def delete_older_than(self, cutoff) -> int:
         result = self.collection.delete_many({'recorded_at': {'$lt': cutoff}})

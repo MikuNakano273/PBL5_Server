@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 
 from pymongo import ASCENDING, DESCENDING, IndexModel
 
@@ -7,7 +7,7 @@ from app.models.base import MongoDocument
 COLLECTION = "notification_events"
 INDEXES = [
     IndexModel([("created_at", ASCENDING)]),
-    IndexModel([("blind_user_id", ASCENDING), ("created_at", DESCENDING)]),
+    IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)]),
     IndexModel([("event_type", ASCENDING), ("created_at", DESCENDING)]),
 ]
 
@@ -15,7 +15,7 @@ INDEXES = [
 class NotificationEventDocument(MongoDocument):
     event_type: str
     alert_id: str | None = None
-    blind_user_id: str
+    user_id: str
     device_id: str
     title: str
     message: str

@@ -18,7 +18,7 @@ class GpsService:
         location = {"type": "Point", "coordinates": [payload.lng, payload.lat]}
         gps_payload = {
             "device_id": cane_context.device_id,
-            "blind_user_id": cane_context.user_id,
+            "user_id": cane_context.user_id,
             "lat": payload.lat,
             "lng": payload.lng,
             "location": location,

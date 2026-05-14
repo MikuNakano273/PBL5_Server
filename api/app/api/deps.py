@@ -13,7 +13,6 @@ from app.services.admin_auth_service import AdminAuthService
 from app.services.admin_service import AdminService
 from app.services.auth_service import AuthService
 from app.services.cane_auth_service import CaneAuthService
-from app.services.care_link_service import CareLinkService
 from app.services.dashboard_service import DashboardService
 from app.services.device_config_service import DeviceConfigService
 from app.services.distance_service import DistanceService
@@ -43,10 +42,6 @@ def get_installation_service(database=Depends(get_database)) -> InstallationServ
 
 def get_user_service(database=Depends(get_database)) -> UserService:
     return UserService(database)
-
-
-def get_care_link_service(database=Depends(get_database)) -> CareLinkService:
-    return CareLinkService(database)
 
 
 def get_dashboard_service(database=Depends(get_database)) -> DashboardService:

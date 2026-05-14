@@ -10,9 +10,9 @@ class _AlertRepo:
         self.created_payload = None
         self.duplicate_query = None
 
-    def find_recent_duplicate(self, blind_user_id, device_id, alert_type, since, image_request_id=None):
+    def find_recent_duplicate(self, user_id, device_id, alert_type, since, image_request_id=None):
         self.duplicate_query = {
-            "blind_user_id": blind_user_id,
+            "user_id": user_id,
             "device_id": device_id,
             "alert_type": alert_type,
             "since": since,
@@ -29,8 +29,8 @@ class _LiveStatusRepo:
     def __init__(self):
         self.updated = None
 
-    def update_alert_status(self, blind_user_id, payload):
-        self.updated = {"blind_user_id": blind_user_id, **payload}
+    def update_alert_status(self, user_id, payload):
+        self.updated = {"user_id": user_id, **payload}
         return 1
 
 
@@ -56,7 +56,7 @@ class AlertServiceTest(TestCase):
         service = self._service()
         image_request = {
             "_id": "request-1",
-            "blind_user_id": "blind-1",
+            "user_id": "user-1",
             "device_id": "device-1",
             "gps_snapshot": {"lat": 16.0544, "lng": 108.2022},
         }
@@ -89,7 +89,7 @@ class AlertServiceTest(TestCase):
         recorded_at = datetime(2026, 4, 25, 11, 5, tzinfo=UTC)
 
         alert = service.create_alert_from_distance(
-            blind_user_id="blind-1",
+            user_id="user-1",
             device_id="device-1",
             distance_cm=48,
             recorded_at=recorded_at,
@@ -107,7 +107,7 @@ class AlertServiceTest(TestCase):
         detected_at = datetime(2026, 4, 25, 11, 10, tzinfo=UTC)
 
         alert = service.create_alert_from_offline_device(
-            blind_user_id="blind-1",
+            user_id="user-1",
             device_id="device-1",
             detected_at=detected_at,
         )

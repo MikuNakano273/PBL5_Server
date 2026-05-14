@@ -25,21 +25,14 @@ class _InstallationNotificationRepo:
 class _InstallationAccountRepo:
     def list_installation_ids_for_users(self, user_ids):
         self.user_ids = list(user_ids)
-        return ["installation-blind", "installation-family", "installation-family"]
-
-
-class _CareLinkRepo:
-    def list_active_family_user_ids(self, blind_user_id):
-        self.blind_user_id = blind_user_id
-        return ["family-1"]
+        return ["installation-user", "installation-user"]
 
 
 class _InstallationRepo:
     def list_by_ids(self, installation_ids):
         self.installation_ids = list(installation_ids)
         return [
-            {"_id": "installation-blind", "push_token": "push-token-1", "push_provider": "fcm", "platform": "android"},
-            {"_id": "installation-family", "push_token": None, "push_provider": None, "platform": "ios"},
+            {"_id": "installation-user", "push_token": "push-token-1", "push_provider": "fcm", "platform": "android"},
         ]
 
 
@@ -58,7 +51,6 @@ class NotificationServiceTest(TestCase):
         service.notification_event_repository = _NotificationEventRepo()
         service.installation_notification_repository = _InstallationNotificationRepo()
         service.installation_account_repository = _InstallationAccountRepo()
-        service.care_link_repository = _CareLinkRepo()
         service.installation_repository = _InstallationRepo()
         service.push_sender = _PushSender()
         return service
@@ -67,7 +59,7 @@ class NotificationServiceTest(TestCase):
         service = self._service()
         alert = {
             "_id": "alert-1",
-            "blind_user_id": "blind-1",
+            "user_id": "user-1",
             "device_id": "device-1",
             "alert_type": "vision_obstacle",
             "title": "Obstacle detected",
@@ -80,14 +72,13 @@ class NotificationServiceTest(TestCase):
 
         self.assertEqual(service.notification_event_repository.created_payload["alert_id"], "alert-1")
         self.assertEqual(service.notification_event_repository.created_payload["event_type"], "alert_created")
-        self.assertEqual(service.installation_account_repository.user_ids, ["blind-1", "family-1"])
+        self.assertEqual(service.installation_account_repository.user_ids, ["user-1"])
         self.assertEqual(
             service.installation_notification_repository.created_payloads,
             [
-                {"installation_id": "installation-blind", "notification_event_id": "event-1"},
-                {"installation_id": "installation-family", "notification_event_id": "event-1"},
+                {"installation_id": "installation-user", "notification_event_id": "event-1"},
             ],
         )
-        self.assertEqual(service.push_sender.sent, [{"installation": "installation-blind", "event": "event-1"}])
-        self.assertEqual(result["installation_count"], 2)
+        self.assertEqual(service.push_sender.sent, [{"installation": "installation-user", "event": "event-1"}])
+        self.assertEqual(result["installation_count"], 1)
         self.assertEqual(result["push_count"], 1)

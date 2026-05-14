@@ -18,8 +18,8 @@ class _LiveStatusRepo:
     def __init__(self):
         self.updated = None
 
-    def update_last_seen(self, blind_user_id, payload):
-        self.updated = {"blind_user_id": blind_user_id, **payload}
+    def update_last_seen(self, user_id, payload):
+        self.updated = {"user_id": user_id, **payload}
         return 1
 
 
@@ -40,6 +40,6 @@ class HeartbeatServiceTest(TestCase):
         self.assertEqual(service.device_repository.updated["last_battery"], 87)
         self.assertEqual(service.device_repository.updated["firmware_version"], "1.0.1")
         self.assertEqual(service.device_repository.updated["status"], "online")
-        self.assertEqual(service.user_live_status_repository.updated["blind_user_id"], "blind-1")
+        self.assertEqual(service.user_live_status_repository.updated["user_id"], "user-1")
         self.assertEqual(service.user_live_status_repository.updated["device_id"], "device-1")
         self.assertEqual(service.user_live_status_repository.updated["last_seen_at"], seen_at)

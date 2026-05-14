@@ -1,4 +1,4 @@
-﻿from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time
 from typing import Any
 
 from bson import ObjectId
@@ -16,7 +16,7 @@ class AlertRepository(BaseRepository):
 
     def find_recent_duplicate(
         self,
-        blind_user_id: str,
+        user_id: str,
         device_id: str,
         alert_type: str,
         since: datetime,
@@ -25,7 +25,7 @@ class AlertRepository(BaseRepository):
         if image_request_id is not None:
             duplicate = self.find_one(
                 {
-                    'blind_user_id': blind_user_id,
+                    'user_id': user_id,
                     'device_id': device_id,
                     'alert_type': alert_type,
                     'image_request_id': image_request_id,
@@ -37,7 +37,7 @@ class AlertRepository(BaseRepository):
 
         return self.collection.find_one(
             {
-                'blind_user_id': blind_user_id,
+                'user_id': user_id,
                 'device_id': device_id,
                 'alert_type': alert_type,
                 'status': 'open',
@@ -46,20 +46,20 @@ class AlertRepository(BaseRepository):
             sort=[('triggered_at', -1)],
         )
 
-    def count_today_for_blind_user(self, blind_user_id: str) -> int:
+    def count_today_for_user(self, user_id: str) -> int:
         start_of_day = datetime.combine(datetime.now(UTC).date(), time.min, tzinfo=UTC)
-        return self.collection.count_documents({'blind_user_id': blind_user_id, 'triggered_at': {'$gte': start_of_day}})
+        return self.collection.count_documents({'user_id': user_id, 'triggered_at': {'$gte': start_of_day}})
 
-    def list_today_for_blind_user(self, blind_user_id: str) -> list[dict[str, Any]]:
+    def list_today_for_user(self, user_id: str) -> list[dict[str, Any]]:
         start_of_day = datetime.combine(datetime.now(UTC).date(), time.min, tzinfo=UTC)
-        return list(self.collection.find({'blind_user_id': blind_user_id, 'triggered_at': {'$gte': start_of_day}}).sort('triggered_at', -1))
+        return list(self.collection.find({'user_id': user_id, 'triggered_at': {'$gte': start_of_day}}).sort('triggered_at', -1))
 
-    def list_recent_for_blind_user(self, blind_user_id: str, limit: int = 5) -> list[dict[str, Any]]:
-        return list(self.collection.find({'blind_user_id': blind_user_id}).sort('triggered_at', -1).limit(limit))
+    def list_recent_for_user(self, user_id: str, limit: int = 5) -> list[dict[str, Any]]:
+        return list(self.collection.find({'user_id': user_id}).sort('triggered_at', -1).limit(limit))
 
-    def list_for_blind_user(self, blind_user_id: str, page: int = 1, limit: int = 20) -> list[dict[str, Any]]:
+    def list_for_user(self, user_id: str, page: int = 1, limit: int = 20) -> list[dict[str, Any]]:
         skip = max(page - 1, 0) * limit
-        return list(self.collection.find({'blind_user_id': blind_user_id}).sort('triggered_at', -1).skip(skip).limit(limit))
+        return list(self.collection.find({'user_id': user_id}).sort('triggered_at', -1).skip(skip).limit(limit))
 
     def list_all(self, page: int = 1, limit: int = 20) -> list[dict[str, Any]]:
         skip = max(page - 1, 0) * limit

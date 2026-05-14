@@ -31,8 +31,8 @@ class VisionQueueServiceTest(TestCase):
             {
                 "_id": "request-1",
                 "device_id": "device-1",
-                "blind_user_id": "blind-1",
-                "image_path": "raw/blind-1/device-1/request-1.jpg",
+                "user_id": "user-1",
+                "image_path": "raw/user-1/device-1/request-1.jpg",
                 "captured_at": captured_at,
             }
         )
@@ -48,8 +48,8 @@ class VisionQueueServiceTest(TestCase):
             {
                 "request_id": "request-1",
                 "device_id": "device-1",
-                "blind_user_id": "blind-1",
-                "object_key": "raw/blind-1/device-1/request-1.jpg",
+                "user_id": "user-1",
+                "object_key": "raw/user-1/device-1/request-1.jpg",
                 "timestamp": captured_at.isoformat(),
             },
         )

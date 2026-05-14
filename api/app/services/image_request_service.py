@@ -22,7 +22,7 @@ class ImageRequestService:
         request_payload = {
             "request_code": f"img_{uuid4().hex}",
             "device_id": cane_context.device_id,
-            "blind_user_id": cane_context.user_id,
+            "user_id": cane_context.user_id,
             "captured_at": payload.captured_at or now,
             "distance_cm": payload.distance_cm,
             "gps_snapshot": payload.gps_snapshot,

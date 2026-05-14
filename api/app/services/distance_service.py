@@ -38,7 +38,7 @@ class DistanceService:
             telemetry_id = self.distance_repository.create_telemetry(
                 {
                     "device_id": cane_context.device_id,
-                    "blind_user_id": cane_context.user_id,
+                    "user_id": cane_context.user_id,
                     "distance_cm": payload.distance_cm,
                     "detected": payload.detected,
                     "sensor_type": payload.sensor_type,

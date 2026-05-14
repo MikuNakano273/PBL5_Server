@@ -82,7 +82,7 @@ class InstallationNotificationTest(TestCase):
                 "event-1": {
                     "_id": "event-1",
                     "event_type": "alert_created",
-                    "blind_user_id": "blind-1",
+                    "user_id": "user-1",
                     "title": "Obstacle",
                     "message": "Obstacle ahead",
                     "risk_level": "warning",
@@ -135,7 +135,7 @@ class InstallationNotificationTest(TestCase):
                 "event-1": {
                     "_id": "event-1",
                     "event_type": "alert_created",
-                    "blind_user_id": "blind-1",
+                    "user_id": "user-1",
                     "title": "Obstacle",
                     "message": "Obstacle ahead",
                     "risk_level": "warning",
@@ -157,7 +157,7 @@ class InstallationNotificationTest(TestCase):
             "installation-1",
             {
                 "event_type": "alert_created",
-                "blind_user_id": "blind-1",
+                "user_id": "user-1",
                 "device_id": "device-1",
                 "title": "Obstacle",
                 "message": "Obstacle ahead",

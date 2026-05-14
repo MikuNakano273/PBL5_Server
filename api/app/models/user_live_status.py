@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 
 from pydantic import BaseModel
 from pymongo import ASCENDING, IndexModel
@@ -8,12 +8,12 @@ from app.models.gps_log import LocationPoint
 
 COLLECTION = "user_live_status"
 INDEXES = [
-    IndexModel([("blind_user_id", ASCENDING)], unique=True),
+    IndexModel([("user_id", ASCENDING)], unique=True),
 ]
 
 
 class UserLiveStatusDocument(MongoDocument):
-    blind_user_id: str
+    user_id: str
     device_id: str
     current_safety_status: str
     nearest_distance_cm: float | None = None

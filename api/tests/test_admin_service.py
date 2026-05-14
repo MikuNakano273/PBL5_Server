@@ -15,8 +15,8 @@ class _UserRepo:
         return [
             {
                 "_id": "user-1",
-                "email": "blind@example.com",
-                "full_name": "Blind User",
+                "email": "user@example.com",
+                "full_name": "User",
                 "phone": None,
                 "role": "user",
                 "status": "active",
@@ -27,8 +27,8 @@ class _UserRepo:
     def get_by_id(self, user_id):
         return {
             "_id": user_id,
-            "email": "blind@example.com",
-            "full_name": "Updated User" if self.updated else "Blind User",
+            "email": "user@example.com",
+            "full_name": "Updated User" if self.updated else "User",
             "role": "user",
             "status": "active",
         }

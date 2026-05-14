@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 
 from pydantic import Field
 from pymongo import ASCENDING, DESCENDING, IndexModel
@@ -7,14 +7,14 @@ from app.models.base import MongoDocument
 
 COLLECTION = "alerts"
 INDEXES = [
-    IndexModel([("blind_user_id", ASCENDING), ("triggered_at", DESCENDING)]),
+    IndexModel([("user_id", ASCENDING), ("triggered_at", DESCENDING)]),
     IndexModel([("device_id", ASCENDING), ("triggered_at", DESCENDING)]),
     IndexModel([("risk_level", ASCENDING), ("triggered_at", DESCENDING)]),
 ]
 
 
 class AlertDocument(MongoDocument):
-    blind_user_id: str
+    user_id: str
     device_id: str
     image_request_id: str | None = None
     alert_type: str

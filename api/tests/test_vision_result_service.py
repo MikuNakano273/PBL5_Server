@@ -20,7 +20,7 @@ class _ImageRequestRepo:
             "request-1": {
                 "_id": "request-1",
                 "device_id": "device-1",
-                "blind_user_id": "blind-1",
+                "user_id": "user-1",
                 "status": "processing",
                 "ai_status": "processing",
             }

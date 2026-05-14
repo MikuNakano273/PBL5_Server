@@ -22,8 +22,8 @@ class _LiveStatusRepo:
     def __init__(self):
         self.updated = None
 
-    def update_distance_status(self, blind_user_id, payload):
-        self.updated = {"blind_user_id": blind_user_id, **payload}
+    def update_distance_status(self, user_id, payload):
+        self.updated = {"user_id": user_id, **payload}
         return 1
 
 
@@ -50,7 +50,7 @@ class DistanceServiceTest(TestCase):
         self.assertTrue(result["saved"])
         self.assertEqual(result["id"], "distance-1")
         self.assertEqual(service.distance_repository.created_payload["device_id"], "device-1")
-        self.assertEqual(service.distance_repository.created_payload["blind_user_id"], "blind-1")
+        self.assertEqual(service.distance_repository.created_payload["user_id"], "user-1")
         self.assertEqual(service.distance_repository.created_payload["distance_cm"], 48)
         self.assertEqual(service.user_live_status_repository.updated["nearest_distance_cm"], 48)
         self.assertEqual(service.user_live_status_repository.updated["current_safety_status"], "danger")

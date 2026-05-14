@@ -52,7 +52,7 @@ class ImageRequestServiceTest(TestCase):
 
         self.assertEqual(request["id"], "request-1")
         self.assertEqual(request["device_id"], "device-1")
-        self.assertEqual(request["blind_user_id"], "blind-1")
+        self.assertEqual(request["user_id"], "user-1")
         self.assertEqual(request["status"], "created")
         self.assertEqual(request["ai_status"], "created")
         self.assertTrue(request["request_code"].startswith("img_"))

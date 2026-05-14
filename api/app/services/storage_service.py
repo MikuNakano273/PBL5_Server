@@ -12,8 +12,8 @@ class StorageService:
         self.storage_client = storage_client if storage_client is not None else get_minio()
         self._owns_default_client = storage_client is None
 
-    def build_raw_image_key(self, blind_user_id: str, device_id: str, request_id: str) -> str:
-        return f"raw/{blind_user_id}/{device_id}/{request_id}.jpg"
+    def build_raw_image_key(self, user_id: str, device_id: str, request_id: str) -> str:
+        return f"raw/{user_id}/{device_id}/{request_id}.jpg"
 
     def get_presigned_upload_url(self, object_key: str) -> str:
         if self._owns_default_client:

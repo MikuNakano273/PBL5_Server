@@ -29,7 +29,7 @@ class AlertService:
         triggered_at = vision_result.get("processed_at") or datetime.now(UTC)
         gps_snapshot = image_request.get("gps_snapshot") or {}
         return self._create_alert(
-            blind_user_id=image_request["blind_user_id"],
+            user_id=image_request["user_id"],
             device_id=image_request["device_id"],
             alert_type="vision_obstacle",
             title="Obstacle detected",
@@ -46,14 +46,14 @@ class AlertService:
     def create_alert_from_distance(
         self,
         *,
-        blind_user_id: str,
+        user_id: str,
         device_id: str,
         distance_cm: float,
         recorded_at: datetime | None = None,
     ) -> dict[str, Any]:
         triggered_at = recorded_at or datetime.now(UTC)
         return self._create_alert(
-            blind_user_id=blind_user_id,
+            user_id=user_id,
             device_id=device_id,
             alert_type="distance_danger",
             title="Obstacle too close",
@@ -67,13 +67,13 @@ class AlertService:
     def create_alert_from_offline_device(
         self,
         *,
-        blind_user_id: str,
+        user_id: str,
         device_id: str,
         detected_at: datetime | None = None,
     ) -> dict[str, Any]:
         triggered_at = detected_at or datetime.now(UTC)
         return self._create_alert(
-            blind_user_id=blind_user_id,
+            user_id=user_id,
             device_id=device_id,
             alert_type="device_offline",
             title="Device offline",
@@ -86,7 +86,7 @@ class AlertService:
     def _create_alert(
         self,
         *,
-        blind_user_id: str,
+        user_id: str,
         device_id: str,
         alert_type: str,
         title: str,
@@ -101,7 +101,7 @@ class AlertService:
     ) -> dict[str, Any]:
         since = triggered_at - timedelta(seconds=self.dedup_window_seconds)
         duplicate = self.alert_repository.find_recent_duplicate(
-            blind_user_id,
+            user_id,
             device_id,
             alert_type,
             since,
@@ -111,7 +111,7 @@ class AlertService:
             return {"created": False, "deduplicated": True, "id": str(duplicate["_id"])}
 
         payload = {
-            "blind_user_id": blind_user_id,
+            "user_id": user_id,
             "device_id": device_id,
             "image_request_id": image_request_id,
             "alert_type": alert_type,
@@ -127,7 +127,7 @@ class AlertService:
         }
         alert_id = self.alert_repository.create_alert(payload)
         self.user_live_status_repository.update_alert_status(
-            blind_user_id,
+            user_id,
             {
                 "device_id": device_id,
                 "current_safety_status": live_status,

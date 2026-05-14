@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -10,7 +10,7 @@ COLLECTION = "image_requests"
 INDEXES = [
     IndexModel([("request_code", ASCENDING)], unique=True),
     IndexModel([("ai_status", ASCENDING), ("created_at", ASCENDING)]),
-    IndexModel([("blind_user_id", ASCENDING), ("created_at", DESCENDING)]),
+    IndexModel([("user_id", ASCENDING), ("created_at", DESCENDING)]),
 ]
 
 
@@ -23,7 +23,7 @@ class GpsSnapshot(BaseModel):
 class ImageRequestDocument(TimestampedDocument):
     request_code: str
     device_id: str
-    blind_user_id: str
+    user_id: str
     captured_at: datetime
     distance_cm: float | None = None
     gps_snapshot: GpsSnapshot | None = None

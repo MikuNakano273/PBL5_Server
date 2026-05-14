@@ -44,7 +44,7 @@ class VisionQueueService:
         return {
             "request_id": str(image_request.get("_id") or image_request.get("id")),
             "device_id": image_request["device_id"],
-            "blind_user_id": image_request["blind_user_id"],
+            "user_id": image_request["user_id"],
             "object_key": image_request["image_path"],
             "timestamp": timestamp,
         }

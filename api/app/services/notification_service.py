@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.core.database import get_database
-from app.repositories.care_link_repository import CareLinkRepository
 from app.repositories.installation_account_repository import InstallationAccountRepository
 from app.repositories.installation_notification_repository import InstallationNotificationRepository
 from app.repositories.mobile_installation_repository import MobileInstallationRepository
@@ -16,7 +15,6 @@ class NotificationService:
         self.notification_event_repository = NotificationEventRepository(database)
         self.installation_notification_repository = InstallationNotificationRepository(database)
         self.installation_account_repository = InstallationAccountRepository(database)
-        self.care_link_repository = CareLinkRepository(database)
         self.installation_repository = MobileInstallationRepository(database)
         self.push_sender = push_sender or PushNotificationService()
 
@@ -25,7 +23,7 @@ class NotificationService:
         event_payload = {
             "event_type": "alert_created",
             "alert_id": str(alert["_id"]),
-            "blind_user_id": alert["blind_user_id"],
+            "user_id": alert["user_id"],
             "device_id": alert.get("device_id"),
             "title": alert["title"],
             "message": alert["message"],
@@ -38,7 +36,7 @@ class NotificationService:
         return {"event_id": event_id, **fanout}
 
     def fanout_notification_to_installations(self, event: dict[str, Any]) -> dict[str, Any]:
-        installation_ids = self._related_installation_ids(event["blind_user_id"])
+        installation_ids = self._related_installation_ids(event["user_id"])
         installations = self.installation_repository.list_by_ids(installation_ids)
         installation_by_id = {str(installation["_id"]): installation for installation in installations}
 
@@ -65,8 +63,6 @@ class NotificationService:
             "push_count": push_count,
         }
 
-    def _related_installation_ids(self, blind_user_id: str) -> list[str]:
-        family_user_ids = self.care_link_repository.list_active_family_user_ids(blind_user_id)
-        user_ids = [blind_user_id, *family_user_ids]
-        installation_ids = self.installation_account_repository.list_installation_ids_for_users(user_ids)
+    def _related_installation_ids(self, user_id: str) -> list[str]:
+        installation_ids = self.installation_account_repository.list_installation_ids_for_users([user_id])
         return list(dict.fromkeys(installation_ids))

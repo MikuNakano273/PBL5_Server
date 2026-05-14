@@ -12,7 +12,7 @@ class _ImageRepo:
         self.updated = []
         self.request = {
             "_id": "request-1",
-            "blind_user_id": "blind-1",
+            "user_id": "user-1",
             "device_id": "device-1",
             "status": "processing",
             "ai_status": "processing",
@@ -53,8 +53,8 @@ class _LiveStatusRepo:
     def __init__(self):
         self.updated = None
 
-    def update_alert_status(self, blind_user_id, payload):
-        self.updated = {"blind_user_id": blind_user_id, **payload}
+    def update_alert_status(self, user_id, payload):
+        self.updated = {"user_id": user_id, **payload}
         return 1
 
 
@@ -78,19 +78,14 @@ class _InboxRepo:
 
 class _AccountRepo:
     def list_installation_ids_for_users(self, user_ids):
-        return ["installation-blind", "installation-family"]
-
-
-class _CareLinkRepo:
-    def list_active_family_user_ids(self, blind_user_id):
-        return ["family-1"]
+        self.user_ids = list(user_ids)
+        return ["installation-user"]
 
 
 class _InstallationRepo:
     def list_by_ids(self, installation_ids):
         return [
-            {"_id": "installation-blind", "push_token": "push-token-1", "push_provider": "fcm"},
-            {"_id": "installation-family", "push_token": None, "push_provider": None},
+            {"_id": "installation-user", "push_token": "push-token-1", "push_provider": "fcm"},
         ]
 
 
@@ -109,7 +104,6 @@ class DeviceToAlertNotificationFlowTest(TestCase):
         notification_service.notification_event_repository = _EventRepo()
         notification_service.installation_notification_repository = _InboxRepo()
         notification_service.installation_account_repository = _AccountRepo()
-        notification_service.care_link_repository = _CareLinkRepo()
         notification_service.installation_repository = _InstallationRepo()
         notification_service.push_sender = _PushSender()
 
@@ -141,5 +135,6 @@ class DeviceToAlertNotificationFlowTest(TestCase):
         self.assertEqual(vision_service.image_request_repository.updated[-1]["status"], "done")
         self.assertEqual(alert_service.alert_repository.created["image_request_id"], "request-1")
         self.assertEqual(notification_service.notification_event_repository.created["alert_id"], "alert-1")
-        self.assertEqual(len(notification_service.installation_notification_repository.created), 2)
-        self.assertEqual(notification_service.push_sender.sent, [("installation-blind", "event-1")])
+        self.assertEqual(notification_service.installation_account_repository.user_ids, ["user-1"])
+        self.assertEqual(len(notification_service.installation_notification_repository.created), 1)
+        self.assertEqual(notification_service.push_sender.sent, [("installation-user", "event-1")])

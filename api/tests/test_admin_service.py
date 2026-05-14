@@ -19,7 +19,6 @@ class _UserRepo:
                 "full_name": "Blind User",
                 "phone": None,
                 "role": "user",
-                "user_type": "blind",
                 "status": "active",
                 "created_at": datetime(2026, 4, 25, 8, 0, tzinfo=UTC),
             }
@@ -31,7 +30,6 @@ class _UserRepo:
             "email": "blind@example.com",
             "full_name": "Updated User" if self.updated else "Blind User",
             "role": "user",
-            "user_type": "blind",
             "status": "active",
         }
 
@@ -45,13 +43,13 @@ class _DeviceRepo:
         self.assigned = None
 
     def list_all(self, page=1, limit=20):
-        return [{"_id": "device-1", "device_code": "STICK-001", "owner_blind_user_id": None}]
+        return [{"_id": "device-1", "device_code": "STICK-001", "owner_user_id": None}]
 
     def get_by_id(self, device_id):
-        return {"_id": device_id, "device_code": "STICK-001", "owner_blind_user_id": self.assigned}
+        return {"_id": device_id, "device_code": "STICK-001", "owner_user_id": self.assigned}
 
-    def assign_device(self, device_id, blind_user_id):
-        self.assigned = blind_user_id
+    def assign_device(self, device_id, user_id):
+        self.assigned = user_id
         return 1
 
 
@@ -96,12 +94,12 @@ class AdminServiceTest(TestCase):
             "user-1",
             AdminUserUpdateRequest(full_name="Updated User", phone=None, status="active"),
         )
-        assigned_device = service.assign_device("device-1", "blind-1")
+        assigned_device = service.assign_device("device-1", "user-1")
 
         self.assertEqual(service.user_repository.updated["full_name"], "Updated User")
         self.assertEqual(updated_user["full_name"], "Updated User")
-        self.assertEqual(service.device_repository.assigned, "blind-1")
-        self.assertEqual(assigned_device["owner_blind_user_id"], "blind-1")
+        self.assertEqual(service.device_repository.assigned, "user-1")
+        self.assertEqual(assigned_device["owner_user_id"], "user-1")
 
     def test_list_users_route_delegates_after_admin_context(self):
         service = _AdminService()

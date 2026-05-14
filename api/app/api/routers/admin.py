@@ -67,7 +67,7 @@ async def assign_device(
     admin_context: dict[str, str] = Depends(get_current_admin_context),
     admin_service: AdminService = Depends(get_admin_service),
 ) -> dict:
-    return admin_service.assign_device(device_id, body.blind_user_id)
+    return admin_service.assign_device(device_id, body.user_id)
 
 
 @router.get("/image-requests")

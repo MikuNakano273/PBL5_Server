@@ -24,7 +24,7 @@ class HeartbeatService:
 
         self.device_repository.update_heartbeat(cane_context.device_id, device_payload)
         self.user_live_status_repository.update_last_seen(
-            cane_context.blind_user_id,
+            cane_context.user_id,
             {
                 "device_id": cane_context.device_id,
                 "last_seen_at": seen_at,

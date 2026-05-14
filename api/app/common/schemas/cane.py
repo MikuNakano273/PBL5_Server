@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class CaneAuthContext(BaseModel):
     device_id: str
     device_code: str
-    blind_user_id: str
+    user_id: str
 
 
 class CaneGpsRequest(BaseModel):

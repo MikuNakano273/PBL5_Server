@@ -42,12 +42,12 @@ class _ImageRequestRepo:
 
 
 class _DeviceRepo:
-    def get_by_id_and_owner(self, device_id, blind_user_id):
-        if device_id == "device-1" and blind_user_id == "blind-1":
+    def get_by_id_and_owner(self, device_id, user_id):
+        if device_id == "device-1" and user_id == "user-1":
             return {
                 "_id": "device-1",
                 "device_code": "STICK-001",
-                "owner_blind_user_id": "blind-1",
+                "owner_user_id": "user-1",
                 "name": "Primary cane",
                 "firmware_version": "1.0.1",
                 "status": "online",
@@ -60,11 +60,11 @@ class StorageAndDeviceConfigTest(TestCase):
         storage_client = _StorageClient()
         service = StorageService(storage_client=storage_client, settings=_Settings())
 
-        object_key = service.build_raw_image_key("blind-1", "device-1", "request-1")
+        object_key = service.build_raw_image_key("user-1", "device-1", "request-1")
         upload_url = service.get_presigned_upload_url(object_key)
 
-        self.assertEqual(object_key, "raw/blind-1/device-1/request-1.jpg")
-        self.assertEqual(upload_url, "http://minio/pbl5-images/raw/blind-1/device-1/request-1.jpg")
+        self.assertEqual(object_key, "raw/user-1/device-1/request-1.jpg")
+        self.assertEqual(upload_url, "http://minio/pbl5-images/raw/user-1/device-1/request-1.jpg")
         self.assertEqual(storage_client.calls[0]["bucket"], "pbl5-images")
         self.assertEqual(storage_client.calls[0]["expires"], timedelta(seconds=900))
 
@@ -72,24 +72,24 @@ class StorageAndDeviceConfigTest(TestCase):
         service = ImageRequestService.__new__(ImageRequestService)
         service.image_request_repository = _ImageRequestRepo()
         service.storage_service = StorageService(storage_client=_StorageClient(), settings=_Settings())
-        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", blind_user_id="blind-1")
+        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", user_id="user-1")
         created = service.create_image_request(context, CaneImageRequestCreate())
 
         uploaded = service.attach_uploaded_image(context, created["id"], CaneImageUploadRequest())
 
-        self.assertEqual(uploaded["image_path"], "raw/blind-1/device-1/request-1.jpg")
-        self.assertEqual(uploaded["upload_url"], "http://minio/pbl5-images/raw/blind-1/device-1/request-1.jpg")
+        self.assertEqual(uploaded["image_path"], "raw/user-1/device-1/request-1.jpg")
+        self.assertEqual(uploaded["upload_url"], "http://minio/pbl5-images/raw/user-1/device-1/request-1.jpg")
 
     def test_device_config_uses_authenticated_device_and_owner(self):
         service = DeviceConfigService.__new__(DeviceConfigService)
         service.device_repository = _DeviceRepo()
         service.settings = _Settings()
-        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", blind_user_id="blind-1")
+        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", user_id="user-1")
 
         config = service.get_config(context)
 
         self.assertEqual(config["device_id"], "device-1")
-        self.assertEqual(config["blind_user_id"], "blind-1")
-        self.assertEqual(config["image_upload_prefix"], "raw/blind-1/device-1/")
+        self.assertEqual(config["user_id"], "user-1")
+        self.assertEqual(config["image_upload_prefix"], "raw/user-1/device-1/")
         self.assertEqual(config["minio_bucket"], "pbl5-images")
         self.assertEqual(config["telemetry"]["distance_sampling_min_seconds"], 2)

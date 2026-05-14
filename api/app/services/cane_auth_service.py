@@ -24,5 +24,5 @@ class CaneAuthService:
         return CaneAuthContext(
             device_id=str(device["_id"]),
             device_code=device["device_code"],
-            blind_user_id=device["owner_blind_user_id"],
+            user_id=device["owner_user_id"],
         )

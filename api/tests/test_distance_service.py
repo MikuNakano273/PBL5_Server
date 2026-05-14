@@ -40,7 +40,7 @@ class DistanceServiceTest(TestCase):
     def test_ingest_distance_saves_sample_and_updates_danger_live_status(self):
         recorded_at = datetime(2026, 4, 25, 10, 10, tzinfo=UTC)
         service = self._service()
-        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", blind_user_id="blind-1")
+        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", user_id="user-1")
 
         result = service.ingest_distance(
             context,
@@ -65,7 +65,7 @@ class DistanceServiceTest(TestCase):
                 "recorded_at": recorded_at - timedelta(seconds=1),
             }
         )
-        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", blind_user_id="blind-1")
+        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", user_id="user-1")
 
         result = service.ingest_distance(context, CaneDistanceRequest(distance_cm=84, recorded_at=recorded_at))
 

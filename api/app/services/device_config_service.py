@@ -14,19 +14,19 @@ class DeviceConfigService:
         self.settings = get_settings()
 
     def get_config(self, cane_context: CaneAuthContext) -> dict[str, Any]:
-        device = self.device_repository.get_by_id_and_owner(cane_context.device_id, cane_context.blind_user_id)
+        device = self.device_repository.get_by_id_and_owner(cane_context.device_id, cane_context.user_id)
         if device is None:
             raise AppError(code="device_not_found", message="Device not found.", status_code=404)
 
         return {
             "device_id": str(device["_id"]),
             "device_code": device["device_code"],
-            "blind_user_id": device["owner_blind_user_id"],
+            "user_id": device["owner_user_id"],
             "name": device.get("name"),
             "firmware_version": device.get("firmware_version"),
             "status": device.get("status"),
             "minio_bucket": self.settings.minio_bucket,
-            "image_upload_prefix": f"raw/{device['owner_blind_user_id']}/{device['_id']}/",
+            "image_upload_prefix": f"raw/{device['owner_user_id']}/{device['_id']}/",
             "image_upload_url_ttl_seconds": self.settings.image_upload_url_ttl_seconds,
             "telemetry": {
                 "alert_distance_threshold_cm": self.settings.alert_distance_threshold_cm,

@@ -29,7 +29,7 @@ class HeartbeatServiceTest(TestCase):
         service.device_repository = _DeviceRepo()
         service.user_live_status_repository = _LiveStatusRepo()
         seen_at = datetime(2026, 4, 25, 10, 20, tzinfo=UTC)
-        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", blind_user_id="blind-1")
+        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", user_id="user-1")
 
         result = service.record_heartbeat(context, CaneHeartbeatRequest(battery=87, firmware_version="1.0.1", seen_at=seen_at))
 

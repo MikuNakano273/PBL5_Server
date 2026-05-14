@@ -29,7 +29,7 @@ class CaneAuthServiceTest(TestCase):
             {
                 "_id": "device-1",
                 "device_code": "STICK-001",
-                "owner_blind_user_id": "blind-1",
+                "owner_user_id": "user-1",
                 "device_secret_hash": hash_password("device-secret"),
             }
         )
@@ -38,14 +38,14 @@ class CaneAuthServiceTest(TestCase):
 
         self.assertEqual(context.device_id, "device-1")
         self.assertEqual(context.device_code, "STICK-001")
-        self.assertEqual(context.blind_user_id, "blind-1")
+        self.assertEqual(context.user_id, "user-1")
 
     def test_rejects_invalid_device_secret(self):
         service = self._service(
             {
                 "_id": "device-1",
                 "device_code": "STICK-001",
-                "owner_blind_user_id": "blind-1",
+                "owner_user_id": "user-1",
                 "device_secret_hash": hash_password("device-secret"),
             }
         )

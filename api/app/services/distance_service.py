@@ -22,7 +22,7 @@ class DistanceService:
         recorded_at = payload.recorded_at or datetime.now(UTC)
         current_safety_status = "danger" if payload.detected and payload.distance_cm < self.alert_distance_threshold_cm else "safe"
         self.user_live_status_repository.update_distance_status(
-            cane_context.blind_user_id,
+            cane_context.user_id,
             {
                 "device_id": cane_context.device_id,
                 "current_safety_status": current_safety_status,
@@ -38,7 +38,7 @@ class DistanceService:
             telemetry_id = self.distance_repository.create_telemetry(
                 {
                     "device_id": cane_context.device_id,
-                    "blind_user_id": cane_context.blind_user_id,
+                    "blind_user_id": cane_context.user_id,
                     "distance_cm": payload.distance_cm,
                     "detected": payload.detected,
                     "sensor_type": payload.sensor_type,

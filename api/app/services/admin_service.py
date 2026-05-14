@@ -35,8 +35,8 @@ class AdminService:
     def list_devices(self, page: int = 1, limit: int = 20) -> list[dict[str, Any]]:
         return [self._serialize_document(device) for device in self.device_repository.list_all(page, limit)]
 
-    def assign_device(self, device_id: str, blind_user_id: str) -> dict[str, Any]:
-        self.device_repository.assign_device(device_id, blind_user_id)
+    def assign_device(self, device_id: str, user_id: str) -> dict[str, Any]:
+        self.device_repository.assign_device(device_id, user_id)
         device = self.device_repository.get_by_id(device_id)
         if device is None:
             raise AppError(code="device_not_found", message="Device not found.", status_code=404)

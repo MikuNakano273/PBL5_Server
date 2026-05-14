@@ -18,4 +18,4 @@ class AdminUserUpdateRequest(BaseModel):
 
 
 class AdminAssignDeviceRequest(BaseModel):
-    blind_user_id: str = Field(min_length=1, max_length=100)
+    user_id: str = Field(min_length=1, max_length=100)

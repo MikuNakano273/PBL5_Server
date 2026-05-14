@@ -38,7 +38,7 @@ class ImageRequestServiceTest(TestCase):
     def test_create_image_request_stores_created_state_for_cane_device(self):
         service = self._service()
         captured_at = datetime(2026, 4, 25, 10, 30, tzinfo=UTC)
-        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", blind_user_id="blind-1")
+        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", user_id="user-1")
 
         request = service.create_image_request(
             context,
@@ -60,7 +60,7 @@ class ImageRequestServiceTest(TestCase):
 
     def test_attach_uploaded_image_marks_request_uploaded_and_queued(self):
         service = self._service()
-        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", blind_user_id="blind-1")
+        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", user_id="user-1")
         created = service.create_image_request(context, CaneImageRequestCreate())
 
         updated = service.attach_uploaded_image(
@@ -77,8 +77,8 @@ class ImageRequestServiceTest(TestCase):
 
     def test_attach_uploaded_image_rejects_other_device_request(self):
         service = self._service()
-        owner_context = CaneAuthContext(device_id="device-1", device_code="STICK-001", blind_user_id="blind-1")
-        other_context = CaneAuthContext(device_id="device-2", device_code="STICK-002", blind_user_id="blind-1")
+        owner_context = CaneAuthContext(device_id="device-1", device_code="STICK-001", user_id="user-1")
+        other_context = CaneAuthContext(device_id="device-2", device_code="STICK-002", user_id="user-1")
         created = service.create_image_request(owner_context, CaneImageRequestCreate())
 
         with self.assertRaises(AppError) as error:
@@ -88,7 +88,7 @@ class ImageRequestServiceTest(TestCase):
 
     def test_worker_state_methods_cover_processing_done_and_failed(self):
         service = self._service()
-        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", blind_user_id="blind-1")
+        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", user_id="user-1")
         created = service.create_image_request(context, CaneImageRequestCreate())
         service.attach_uploaded_image(context, created["id"], CaneImageUploadRequest(image_path="raw/device-1/request-1.jpg"))
 

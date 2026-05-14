@@ -29,7 +29,7 @@ class GpsServiceTest(TestCase):
         service.gps_repository = _GpsRepo()
         service.user_live_status_repository = _LiveStatusRepo()
         recorded_at = datetime(2026, 4, 25, 10, 0, tzinfo=UTC)
-        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", blind_user_id="blind-1")
+        context = CaneAuthContext(device_id="device-1", device_code="STICK-001", user_id="user-1")
 
         result = service.ingest_gps(
             context,

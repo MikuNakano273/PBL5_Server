@@ -26,7 +26,6 @@ class AdminAuthService:
             subject=str(user["_id"]),
             claims={
                 "role": "admin",
-                "user_type": None,
                 "installation_id": None,
                 "token_use": "admin",
             },

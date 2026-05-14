@@ -1,7 +1,6 @@
 ﻿from pydantic import BaseModel, Field
 
 from app.common.enums.user_role import UserRole
-from app.common.enums.user_type import UserType
 
 
 class UserResponse(BaseModel):
@@ -10,7 +9,6 @@ class UserResponse(BaseModel):
     full_name: str
     phone: str | None = None
     role: UserRole
-    user_type: UserType | None = None
     status: str
 
     model_config = {'populate_by_name': True}

@@ -7,6 +7,7 @@ from app.common.exceptions.base import AppError
 from app.common.schemas.admin import AdminLoginRequest
 from app.common.utils.security import create_access_token, decode_token, hash_password
 from app.services.admin_auth_service import AdminAuthService
+from app.services.auth_service import AuthService
 
 
 class _UserRepo:
@@ -28,6 +29,14 @@ class _AdminAuthService:
         return {"access_token": "admin-token", "token_type": "bearer"}
 
 
+class _RefreshTokenRepo:
+    def __init__(self):
+        self.created_token = None
+
+    def create_refresh_token(self, payload):
+        self.created_token = payload
+
+
 class AdminAuthTest(TestCase):
     def test_admin_login_issues_admin_scoped_access_token(self):
         service = AdminAuthService.__new__(AdminAuthService)
@@ -37,7 +46,6 @@ class AdminAuthTest(TestCase):
                 "email": "admin@example.com",
                 "password_hash": hash_password("password123"),
                 "role": "admin",
-                "user_type": None,
                 "status": "active",
             }
         )
@@ -49,6 +57,7 @@ class AdminAuthTest(TestCase):
         self.assertEqual(payload["sub"], "admin-1")
         self.assertEqual(payload["role"], "admin")
         self.assertEqual(payload["token_use"], "admin")
+        self.assertNotIn("user_type", payload)
 
     def test_admin_login_rejects_non_admin_user(self):
         service = AdminAuthService.__new__(AdminAuthService)
@@ -58,7 +67,6 @@ class AdminAuthTest(TestCase):
                 "email": "user@example.com",
                 "password_hash": hash_password("password123"),
                 "role": "user",
-                "user_type": "family",
                 "status": "active",
             }
         )
@@ -91,3 +99,24 @@ class AdminAuthTest(TestCase):
 
         self.assertEqual(response["access_token"], "admin-token")
         self.assertEqual(service.login_args, ("admin@example.com", "password123"))
+
+    def test_mobile_access_token_does_not_include_user_type(self):
+        service = AuthService.__new__(AuthService)
+        service.refresh_token_repository = _RefreshTokenRepo()
+
+        response = service._issue_token_pair(
+            {
+                "_id": "user-1",
+                "email": "user@example.com",
+                "password_hash": hash_password("password123"),
+                "role": "user",
+                "status": "active",
+            },
+            installation_id="inst-1",
+        )
+        payload = decode_token(response.access_token)
+
+        self.assertEqual(payload["sub"], "user-1")
+        self.assertEqual(payload["role"], "user")
+        self.assertEqual(payload["installation_id"], "inst-1")
+        self.assertNotIn("user_type", payload)

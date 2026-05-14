@@ -1,7 +1,6 @@
 ﻿from pydantic import BaseModel, EmailStr, Field
 
 from app.common.enums.user_role import UserRole
-from app.common.enums.user_type import UserType
 
 
 class LoginRequest(BaseModel):
@@ -34,5 +33,4 @@ class TokenPairResponse(BaseModel):
 class AuthContext(BaseModel):
     user_id: str
     role: UserRole
-    user_type: UserType | None = None
     installation_id: str | None = None

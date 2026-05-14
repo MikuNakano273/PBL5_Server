@@ -70,7 +70,6 @@ class AuthService:
         user_id = str(user["_id"])
         claims = {
             "role": user["role"],
-            "user_type": user.get("user_type"),
             "installation_id": installation_id,
         }
         access_token = create_access_token(subject=user_id, claims=claims)

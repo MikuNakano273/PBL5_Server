@@ -8,7 +8,7 @@ from app.models.base import TimestampedDocument
 COLLECTION = "users"
 INDEXES = [
     IndexModel([("email", ASCENDING)], unique=True),
-    IndexModel([("role", ASCENDING), ("user_type", ASCENDING), ("status", ASCENDING)]),
+    IndexModel([("role", ASCENDING), ("status", ASCENDING)]),
 ]
 
 
@@ -18,5 +18,4 @@ class UserDocument(TimestampedDocument):
     full_name: str
     phone: str | None = None
     role: str
-    user_type: str | None = None
     status: str = Field(default="active")

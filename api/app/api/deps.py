@@ -89,7 +89,6 @@ def get_current_auth_context(authorization: str | None = Header(default=None)) -
     return AuthContext(
         user_id=payload["sub"],
         role=payload["role"],
-        user_type=payload.get("user_type"),
         installation_id=payload.get("installation_id"),
     )
 

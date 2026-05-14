@@ -64,6 +64,7 @@ Thumbs.db
 .claude/
 .codex/
 .cursor/
+.worktrees/
 
 # Legacy top-level artifacts from the old implementation
 Server/

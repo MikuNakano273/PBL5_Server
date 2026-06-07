@@ -3,7 +3,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
+from app.admin_web import register_admin_web
 from app.api.router import api_router
 from app.common.exceptions.handlers import register_exception_handlers
 from app.core.config import get_settings
@@ -43,6 +45,12 @@ def create_app() -> FastAPI:
     )
     register_exception_handlers(app)
     app.include_router(api_router)
+
+    @app.get("/", include_in_schema=False)
+    async def redirect_to_admin() -> RedirectResponse:
+        return RedirectResponse(url="/admin")
+
+    register_admin_web(app)
     return app
 
 

@@ -10,6 +10,7 @@ services:
       MONGODB_URI: mongodb://admin:admin123@mongo:27017/pbl5?authSource=admin
       REDIS_HOST: redis
       MINIO_ENDPOINT: minio:9000
+      YOLO_CONFIDENCE_THRESHOLD: 0.35
     ports:
       - "8000:8000"
     depends_on:
@@ -20,16 +21,23 @@ services:
       minio:
         condition: service_started
     volumes:
-      - ./api:/api
+      - ./admin-web/dist:/admin-web/dist:ro
+      - yolo_models:/models
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     restart: unless-stopped
     networks:
       - pbl5-network
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=2).read()"]
-      interval: 15s
-      timeout: 10s
+      test: ["CMD", "python", "-c", "import socket; connection = socket.create_connection(('localhost', 8000), timeout=2); connection.close()"]
+      interval: 30s
+      timeout: 5s
       retries: 3
+      start_period: 10s
+    logging: &default-logging
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   worker:
     build:
@@ -54,38 +62,38 @@ services:
       api:
         condition: service_healthy
     volumes:
-      - ./worker:/worker
       - yolo_models:/models
     command: python -m app.main
     restart: unless-stopped
     networks:
       - pbl5-network
+    logging: *default-logging
 
   mongo:
     image: mongo:7
     container_name: pbl5-mongo
+    command: mongod --quiet --logpath /dev/null
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin123
       MONGO_INITDB_DATABASE: pbl5
-    ports:
-      - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - ./Database/mongo:/data/db
     networks:
       - pbl5-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
+      test: ["CMD", "pgrep", "-x", "mongod"]
+      interval: 30s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    logging:
+      driver: none
 
   redis:
     image: redis:7-alpine
     container_name: pbl5-redis
-    ports:
-      - "6379:6379"
     command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
@@ -94,9 +102,10 @@ services:
       - pbl5-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      interval: 30s
       timeout: 3s
       retries: 5
+    logging: *default-logging
 
   minio:
     image: minio/minio:latest
@@ -106,21 +115,19 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
       - "9001:9001"
     volumes:
       - minio_data:/data
     restart: unless-stopped
     networks:
       - pbl5-network
+    logging: *default-logging
 
 networks:
   pbl5-network:
     driver: bridge
 
 volumes:
-  mongo_data:
-    driver: local
   redis_data:
     driver: local
   minio_data:

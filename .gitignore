@@ -50,6 +50,7 @@ media/
 *.seed
 *.sqlite
 *.sqlite3
+Database/mongo/
 
 # OS / editor noise
 .DS_Store

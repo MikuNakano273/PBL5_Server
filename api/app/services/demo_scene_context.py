@@ -64,27 +64,40 @@ def _scene_type(objects: list[dict[str, Any]]) -> tuple[str, float]:
     return "unknown", max((_confidence(item) for item in objects), default=0)
 
 
-def _risk_level(scene_type: str, yolo_result: dict[str, Any]) -> str:
+def _valid_distance(sensor: dict[str, Any] | None) -> float | None:
+    if not sensor or not sensor.get("distance_valid", False):
+        return None
+    distance = sensor.get("distance_cm")
+    return float(distance) if isinstance(distance, int | float) else None
+
+
+def _risk_level(scene_type: str, sensor: dict[str, Any] | None) -> str:
     if scene_type == "clear":
         return "clear"
 
-    raw_risk = _normalize_label(yolo_result.get("risk_level"))
-    nearest_obstacle_cm = yolo_result.get("nearest_obstacle_cm")
-    if raw_risk in {"high", "danger", "critical"}:
+    alert_level = _normalize_label(sensor.get("alert_level")) if sensor else ""
+    if alert_level in {"danger", "critical"}:
         return "danger"
-    if isinstance(nearest_obstacle_cm, int | float) and nearest_obstacle_cm <= 100:
+
+    distance = _valid_distance(sensor)
+    if distance is not None and distance < 60:
         return "danger"
+    if distance is not None and distance < 100:
+        return "warning"
     if scene_type == "unknown":
         return "info"
     return "warning"
 
 
-def build_scene_context_from_yolo(yolo_result: dict[str, Any]) -> dict[str, Any]:
+def build_scene_context_from_yolo(
+    yolo_result: dict[str, Any],
+    matched_sensor: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     objects = yolo_result.get("objects") or []
     scene_type, confidence = _scene_type(objects)
     return {
         "type": scene_type,
-        "risk_level": _risk_level(scene_type, yolo_result),
+        "risk_level": _risk_level(scene_type, matched_sensor),
         "confidence": round(confidence, 4),
         "age_ms": 0,
         "fresh": True,
@@ -137,8 +150,6 @@ def detect_image_bytes(image_bytes: bytes) -> dict[str, Any]:
             "model_name": "yolov8s",
             "model_version": "1.0",
             "objects": objects,
-            "nearest_obstacle_cm": 80 if objects else None,
-            "risk_level": "high" if objects else "low",
             "summary_text": f"Detected {len(objects)} object(s)",
             "image_width": image_width,
             "image_height": image_height,

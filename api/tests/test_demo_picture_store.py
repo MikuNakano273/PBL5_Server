@@ -23,6 +23,7 @@ class DemoPictureStoreTest(TestCase):
 
             self.assertTrue((Path(temp_dir) / "pictures").is_dir())
             self.assertEqual(saved["frame_id"], "frame_1")
+            self.assertEqual(saved["image_url"], "/uploads/frame_1.jpg")
             self.assertEqual((Path(temp_dir) / "pictures" / "frame_1.jpg").read_bytes(), b"jpeg-bytes")
             self.assertEqual(store.get_metadata("frame_1")["scene_context"]["type"], "person")
 

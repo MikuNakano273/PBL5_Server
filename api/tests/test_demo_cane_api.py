@@ -99,7 +99,18 @@ class DemoCaneApiTest(TestCase):
         self._post_frame()
 
         state = self.client.get("/api/v1/state", params={"device_id": "pbl5-01"}).json()
+        self.assertEqual(state["latest_frame"]["image_url"], "/uploads/frame_45.jpg")
         image_response = self.client.get(state["latest_frame"]["image_url"])
+
+        self.assertEqual(image_response.status_code, 200)
+        self.assertEqual(image_response.headers["content-type"], "image/jpeg")
+        self.assertEqual(image_response.content, b"\xff\xd8jpeg-bytes\xff\xd9")
+
+    def test_legacy_api_upload_url_still_serves_uploaded_jpeg(self):
+        self._post_sensor()
+        self._post_frame()
+
+        image_response = self.client.get("/api/v1/uploads/frame_45.jpg")
 
         self.assertEqual(image_response.status_code, 200)
         self.assertEqual(image_response.headers["content-type"], "image/jpeg")
@@ -132,10 +143,10 @@ class DemoCaneApiTest(TestCase):
         state = self.client.get("/api/v1/state", params={"device_id": "pbl5-01"}).json()
 
         self.assertEqual(body["detection"]["type"], "vehicle")
-        self.assertEqual(body["detection"]["risk_level"], "danger")
+        self.assertEqual(body["detection"]["risk_level"], "warning")
         self.assertEqual(body["detection"]["confidence"], 0.83)
         self.assertEqual(state["scene_context"]["type"], "vehicle")
-        self.assertEqual(state["scene_context"]["risk_level"], "danger")
+        self.assertEqual(state["scene_context"]["risk_level"], "warning")
 
     def test_frame_upload_persists_picture_and_gallery_metadata(self):
         with tempfile.TemporaryDirectory() as temp_dir:

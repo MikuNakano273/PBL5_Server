@@ -38,7 +38,7 @@ class DemoPictureStore:
         stored_metadata = {
             **metadata,
             "frame_id": frame_id,
-            "image_url": f"/api/v1/uploads/{frame_id}.jpg",
+            "image_url": f"/uploads/{frame_id}.jpg",
         }
         image_path.write_bytes(image_bytes)
         metadata_path.write_text(

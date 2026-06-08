@@ -107,7 +107,7 @@ async def upload_frame(
 
     sensor = _latest_sensor_by_device.get(device_id)
     yolo_result = detect_image_bytes(image_bytes)
-    detection = build_scene_context_from_yolo(yolo_result)
+    detection = build_scene_context_from_yolo(yolo_result, sensor)
     _store_scene_context(device_id, detection)
 
     picture_store = get_picture_store()

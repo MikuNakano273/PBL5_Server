@@ -6,7 +6,7 @@ from pathlib import Path
 
 import requests
 
-DEFAULT_IMAGE = Path(__file__).with_name("con-duong-dep-nhat-da-nang-8.jpg")
+DEFAULT_IMAGE = Path(__file__).with_name("valdemarvan2003-vietnam-8121062_1920.jpg")
 DEFAULT_DEVICE_ID = "pbl5-01"
 
 
@@ -52,7 +52,7 @@ def run_pipeline(server_url: str, image_path: Path, device_id: str) -> None:
         json=sensor_payload,
         timeout=30,
     )
-    print_response("POST /api/v1/sensor before frame", sensor_response)
+    print_response("before frame: POST /api/v1/sensor", sensor_response)
 
     content_type = mimetypes.guess_type(image_path.name)[0] or "image/jpeg"
     with image_path.open("rb") as image_file:
@@ -82,7 +82,7 @@ def run_pipeline(server_url: str, image_path: Path, device_id: str) -> None:
         timeout=30,
     )
     sensor_after_body = print_response(
-        "POST /api/v1/sensor after frame", sensor_after_response
+        "after frame: POST /api/v1/sensor", sensor_after_response
     )
 
     print("\n=== Final result ===")

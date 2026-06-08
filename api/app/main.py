@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse
 
 from app.admin_web import register_admin_web
 from app.api.router import api_router
+from app.api.routers.demo_cane import get_uploaded_frame
 from app.common.exceptions.handlers import register_exception_handlers
 from app.core.config import get_settings
 from app.core.database import close_mongo, connect_mongo
@@ -52,6 +53,10 @@ def create_app() -> FastAPI:
     @app.get("/", include_in_schema=False)
     async def redirect_to_admin() -> RedirectResponse:
         return RedirectResponse(url="/admin")
+
+    @app.get("/uploads/{frame_id}.jpg", include_in_schema=False)
+    async def get_plan_uploaded_frame(frame_id: str):
+        return await get_uploaded_frame(frame_id)
 
     register_admin_web(app)
     return app

@@ -61,3 +61,17 @@ test("switches language persistently and logs out", async () => {
   await waitFor(() => expect(sessionStorage.getItem("admin_access_token")).toBeNull());
   expect(await screen.findByRole("heading", { name: "Admin login" })).toBeInTheDocument();
 });
+
+test("switches demo navigation labels between Vietnamese and English", async () => {
+  sessionStorage.setItem("admin_access_token", "admin-token");
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("[]", { status: 200 }));
+  renderApp("/");
+
+  expect(await screen.findByRole("link", { name: "Giám sát demo" })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Thư viện ảnh" })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: "EN" }));
+
+  expect(await screen.findByRole("link", { name: "Demo monitor" })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Pictures" })).toBeInTheDocument();
+});

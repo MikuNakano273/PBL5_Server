@@ -122,3 +122,40 @@ test("renders the demo monitor with the latest frame and scene context", async (
   expect(screen.getAllByText("warning").length).toBeGreaterThan(0);
   expect(screen.getByText("76%")).toBeInTheDocument();
 });
+
+test("selects a persisted picture and shows context objects and bounding boxes", async () => {
+  const picture = {
+    frame_id: "frame_45",
+    device_id: "pbl5-01",
+    created_at: "2026-06-08T00:00:00+00:00",
+    image_url: "/api/v1/uploads/frame_45.jpg",
+    scene_context: {
+      type: "person",
+      risk_level: "warning",
+      confidence: 0.91,
+      age_ms: 0,
+      fresh: true,
+    },
+    objects: [
+      {
+        label: "person",
+        confidence: 0.91,
+        bbox: { x1: 10, y1: 20, x2: 100, y2: 200 },
+      },
+    ],
+    image_width: 200,
+    image_height: 400,
+  };
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(
+    new Response(JSON.stringify([picture]), { status: 200 }),
+  );
+
+  renderRoute("/pictures");
+
+  await userEvent.click(await screen.findByRole("button", { name: "Select frame_45" }));
+
+  expect(screen.getByRole("heading", { name: "Pictures" })).toBeInTheDocument();
+  expect(screen.getByRole("img", { name: "Selected frame frame_45" })).toBeInTheDocument();
+  expect(screen.getAllByText("person").length).toBeGreaterThan(0);
+  expect(screen.getByTestId("picture-bbox")).toBeInTheDocument();
+});

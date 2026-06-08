@@ -1,6 +1,8 @@
 ﻿from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -17,6 +19,7 @@ from app.core.redis import close_redis, connect_redis
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    Path(get_settings().pictures_dir).mkdir(parents=True, exist_ok=True)
     app.state.mongo = connect_mongo()
     app.state.redis = connect_redis()
     app.state.minio = connect_minio()

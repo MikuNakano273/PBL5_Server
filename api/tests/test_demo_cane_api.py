@@ -1,13 +1,23 @@
+import tempfile
+from pathlib import Path
 from unittest import TestCase
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
-
 from app.main import create_app
+from app.services.demo_picture_store import DemoPictureStore
+from fastapi.testclient import TestClient
 
 
 class DemoCaneApiTest(TestCase):
     def setUp(self):
+        self.picture_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.picture_dir.cleanup)
+        store_patcher = patch(
+            "app.api.routers.demo_cane.get_picture_store",
+            return_value=DemoPictureStore(Path(self.picture_dir.name)),
+        )
+        store_patcher.start()
+        self.addCleanup(store_patcher.stop)
         self.client = TestClient(create_app())
 
     def _post_sensor(self):
@@ -40,7 +50,9 @@ class DemoCaneApiTest(TestCase):
                 "cam_seq": "45",
                 "millis": "987654",
             },
-            files={"image": ("esp32cam.jpg", b"\xff\xd8jpeg-bytes\xff\xd9", "image/jpeg")},
+            files={
+                "image": ("esp32cam.jpg", b"\xff\xd8jpeg-bytes\xff\xd9", "image/jpeg")
+            },
         )
 
     def test_sensor_endpoint_accepts_plan_payload_and_returns_scene_context(self):
@@ -124,3 +136,33 @@ class DemoCaneApiTest(TestCase):
         self.assertEqual(body["detection"]["confidence"], 0.83)
         self.assertEqual(state["scene_context"]["type"], "vehicle")
         self.assertEqual(state["scene_context"]["risk_level"], "danger")
+
+    def test_frame_upload_persists_picture_and_gallery_metadata(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch("app.api.routers.demo_cane.get_picture_store") as get_store:
+                get_store.return_value = DemoPictureStore(Path(temp_dir))
+                with patch("app.api.routers.demo_cane.detect_image_bytes") as detect:
+                    detect.return_value = {
+                        "objects": [
+                            {
+                                "label": "person",
+                                "confidence": 0.91,
+                                "bbox": {"x1": 10, "y1": 20, "x2": 100, "y2": 200},
+                            }
+                        ],
+                        "risk_level": "warning",
+                        "image_width": 640,
+                        "image_height": 480,
+                    }
+                    frame_body = self._post_frame().json()
+
+                pictures = self.client.get("/api/v1/pictures").json()
+                detail = self.client.get(f"/api/v1/pictures/{frame_body['frame_id']}").json()
+
+            self.assertEqual(len(pictures), 1)
+            self.assertEqual(detail["scene_context"]["type"], "person")
+            self.assertEqual(detail["objects"][0]["label"], "person")
+            self.assertEqual(detail["image_width"], 640)
+            self.assertEqual(detail["image_height"], 480)
+            self.assertTrue((Path(temp_dir) / f"{frame_body['frame_id']}.jpg").is_file())
+            self.assertTrue((Path(temp_dir) / f"{frame_body['frame_id']}.json").is_file())

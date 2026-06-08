@@ -116,7 +116,11 @@ def detect_image_bytes(image_bytes: bytes) -> dict[str, Any]:
         settings = get_settings()
         results = model(path, conf=settings.yolo_confidence_threshold)
         objects = []
+        image_width = None
+        image_height = None
         for result in results:
+            if result.orig_shape:
+                image_height, image_width = result.orig_shape[:2]
             names = result.names
             for box in result.boxes:
                 cls_idx = int(box.cls[0].item())
@@ -136,6 +140,8 @@ def detect_image_bytes(image_bytes: bytes) -> dict[str, Any]:
             "nearest_obstacle_cm": 80 if objects else None,
             "risk_level": "high" if objects else "low",
             "summary_text": f"Detected {len(objects)} object(s)",
+            "image_width": image_width,
+            "image_height": image_height,
         }
     except Exception as exc:
         return {"objects": [], "risk_level": "low", "summary_text": f"YOLO failed: {exc}"}

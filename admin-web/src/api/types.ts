@@ -43,3 +43,26 @@ export type DemoState = {
   };
   scene_context: DemoSceneContext;
 };
+
+export type DemoDetectedObject = {
+  label: string;
+  confidence: number;
+  bbox?: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  };
+};
+
+export type DemoPicture = {
+  frame_id: string;
+  device_id: string;
+  created_at: string;
+  image_url: string;
+  scene_context: DemoSceneContext;
+  objects: DemoDetectedObject[];
+  matched_sensor?: DemoState["latest_sensor"];
+  image_width?: number;
+  image_height?: number;
+};

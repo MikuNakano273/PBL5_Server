@@ -8,6 +8,7 @@ import DemoMonitorPage from "./pages/DemoMonitorPage";
 import DevicesPage from "./pages/DevicesPage";
 import ImageRequestsPage from "./pages/ImageRequestsPage";
 import LoginPage from "./pages/LoginPage";
+import PicturesPage from "./pages/PicturesPage";
 import UsersPage from "./pages/UsersPage";
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
     <Route element={<ProtectedRoute />}><Route element={<AdminLayout />}>
       <Route index element={<DashboardPage />} />
       <Route path="demo-monitor" element={<DemoMonitorPage />} />
+      <Route path="pictures" element={<PicturesPage />} />
       <Route path="users" element={<UsersPage />} />
       <Route path="devices" element={<DevicesPage />} />
       <Route path="image-requests" element={<ImageRequestsPage />} />

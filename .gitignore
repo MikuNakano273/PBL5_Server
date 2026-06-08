@@ -46,6 +46,7 @@ tmp/
 temp/
 uploads/
 media/
+pictures/
 *.pid
 *.seed
 *.sqlite

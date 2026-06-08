@@ -12,7 +12,7 @@ export default function AdminLayout() {
     window.addEventListener("admin-unauthorized", unauthorized);
     return () => window.removeEventListener("admin-unauthorized", unauthorized);
   }, [navigate]);
-  const links = [["/", t("dashboard")], ["/demo-monitor", "Demo Monitor"], ["/users", t("users")], ["/devices", t("devices")], ["/image-requests", t("imageRequests")], ["/alerts", t("alerts")]];
+  const links = [["/", t("dashboard")], ["/demo-monitor", "Demo Monitor"], ["/pictures", "Pictures"], ["/users", t("users")], ["/devices", t("devices")], ["/image-requests", t("imageRequests")], ["/alerts", t("alerts")]];
   return <div className="admin-shell">
     <aside><div className="brand">PBL5 Admin</div><nav>{links.map(([path, label]) => <NavLink key={path} to={path} end={path === "/"}>{label}</NavLink>)}</nav></aside>
     <div className="content-shell"><header><button onClick={() => setLanguage(language === "vi" ? "en" : "vi")}>{language === "vi" ? "EN" : "VI"}</button><button onClick={logout}>{t("logout")}</button></header><main><Outlet /></main></div>

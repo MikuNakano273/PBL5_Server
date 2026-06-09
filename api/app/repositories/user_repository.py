@@ -42,11 +42,15 @@ class UserRepository(BaseRepository):
         try:
             object_id = ObjectId(user_id)
         except InvalidId:
-            return 0
-        return self.update_one(
+            object_id = user_id
+        payload = {'password_hash': password_hash, 'updated_at': datetime.now(UTC)}
+        updated = self.update_one(
             {'_id': object_id},
-            {'password_hash': password_hash, 'updated_at': datetime.now(UTC)},
+            payload,
         )
+        if updated == 0 and object_id != user_id:
+            return self.update_one({'_id': user_id}, payload)
+        return updated
 
     def update_profile(self, user_id: str, payload: dict[str, Any]) -> int:
         from datetime import UTC, datetime

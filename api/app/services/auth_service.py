@@ -58,7 +58,13 @@ class AuthService:
         if not verify_password(current_password, user["password_hash"]):
             raise AppError(code="invalid_password", message="Current password is incorrect.", status_code=400)
 
-        self.user_repository.update_password_hash(user_id, hash_password(new_password))
+        updated = self.user_repository.update_password_hash(user_id, hash_password(new_password))
+        if updated == 0:
+            raise AppError(
+                code="password_update_failed",
+                message="Password could not be updated.",
+                status_code=500,
+            )
         self.refresh_token_repository.revoke_all_for_user(user_id)
 
     def issue_token_pair_for_user(self, user_id: str, installation_id: str | None = None) -> TokenPairResponse:

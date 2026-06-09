@@ -66,6 +66,9 @@ Thumbs.db
 .cursor/
 .worktrees/
 
+# Local documentation
+API document.md
+
 # Legacy top-level artifacts from the old implementation
 Server/
 nginx/

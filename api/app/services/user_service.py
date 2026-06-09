@@ -32,4 +32,5 @@ class UserService:
     def _serialize_user(self, user: dict[str, Any]) -> dict[str, Any]:
         serialized = dict(user)
         serialized['_id'] = str(serialized['_id'])
+        serialized['id'] = serialized['_id']
         return serialized

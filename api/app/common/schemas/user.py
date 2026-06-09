@@ -4,7 +4,8 @@ from app.common.enums.user_role import UserRole
 
 
 class UserResponse(BaseModel):
-    id: str = Field(alias='_id')
+    id: str
+    legacy_id: str = Field(alias='_id')
     email: str
     full_name: str
     phone: str | None = None

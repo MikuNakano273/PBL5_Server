@@ -1,5 +1,7 @@
 ﻿from functools import lru_cache
 
+from pathlib import Path
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -60,6 +62,9 @@ class Settings(BaseSettings):
     vision_job_timeout_seconds: int = Field(default=120, alias="VISION_JOB_TIMEOUT_SECONDS")
     vision_retry_max: int = Field(default=3, alias="VISION_RETRY_MAX")
     vision_retry_intervals: str = Field(default="3,9,27", alias="VISION_RETRY_INTERVALS")
+    yolo_model_path: str = Field(default="/models/yolov8s.pt", alias="YOLO_MODEL_PATH")
+    yolo_confidence_threshold: float = Field(default=0.35, alias="YOLO_CONFIDENCE_THRESHOLD")
+    pictures_dir: str = Field(default=str(Path(__file__).resolve().parents[3] / "pictures"), alias="PICTURES_DIR")
 
     model_config = SettingsConfigDict(
         env_file=".env",

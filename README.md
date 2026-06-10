@@ -39,7 +39,28 @@ Useful URLs:
 
 - API health: `http://localhost:8000/api/health`
 - Swagger/OpenAPI: `http://localhost:8000/docs`
+- Admin web after building: `http://localhost:8000/admin`
 - MinIO console: `http://localhost:9001`
+
+Admin frontend development:
+
+```bash
+cd admin-web
+npm install
+npm test -- --run
+npm run dev
+```
+
+Vite proxies `/api` requests to `http://localhost:8000`. Build the frontend
+before serving it from FastAPI:
+
+```bash
+cd admin-web
+npm run build
+```
+
+If `admin-web/dist` is missing, FastAPI still starts and `/admin` returns an
+informative `503` response.
 
 ## Main Workflows
 
@@ -81,6 +102,40 @@ curl -X POST http://localhost:8000/api/mobile/v1/dev/test-alert \
 ```
 
 It creates and returns a new high-risk `OBSTACLE` alert for the authenticated user's cane. The endpoint is absent from the production routing table by default. Do not set `ENABLE_DEV_ENDPOINTS=true` in production.
+
+## Docker Storage And Ports
+
+The Docker stack publishes only the interfaces needed from the host:
+
+- API and admin web: `http://localhost:8000`
+- MinIO console: `http://localhost:9001`
+
+MongoDB, Redis, and the MinIO API remain available to containers on the
+`pbl5-network` network, but are not published to the host.
+
+MongoDB application data uses database `pbl5`. The connection is configured
+in `docker-compose.yml` through `MONGODB_URI` and `MONGODB_DB_NAME`; API
+connection code lives in `api/app/core/database.py`. Persistent database files
+are stored in the project at `Database/mongo`, mounted at `/data/db` inside
+the MongoDB container.
+
+```bash
+docker exec pbl5-mongo mongosh --quiet -u admin -p admin123 \
+  --authenticationDatabase admin pbl5
+```
+
+MongoDB's Docker logging driver is intentionally disabled because MongoDB
+prints connection and checkpoint INFO messages continuously. Use container
+health and an authenticated ping instead:
+
+```bash
+docker compose ps mongo
+docker exec pbl5-mongo mongosh --quiet -u admin -p admin123 \
+  --authenticationDatabase admin --eval "db.getSiblingDB('pbl5').runCommand({ping: 1})"
+```
+
+Do not delete `Database/mongo` unless the MongoDB data should be permanently
+removed.
 
 ## Verification
 

@@ -1,9 +1,10 @@
 ﻿from fastapi import APIRouter
 
-from app.api.routers import admin, auth, cane, dashboard, health, internal, me, notifications
+from app.api.routers import admin, auth, cane, dashboard, demo_cane, health, internal, me, notifications
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])
+api_router.include_router(demo_cane.router, prefix="/api/v1", tags=["demo-cane"])
 api_router.include_router(cane.router, prefix="/api/cane/v1", tags=["cane"])
 api_router.include_router(auth.router, prefix="/api/mobile/v1/auth", tags=["mobile-auth"])
 api_router.include_router(me.router, prefix="/api/mobile/v1/me", tags=["me"])

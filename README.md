@@ -59,7 +59,8 @@ Cane/device flow:
 - GPS, distance, heartbeat, image metadata, and uploaded image are accepted under `/api/cane/v1`
 - Image upload queues an RQ job with `request_id`, `device_id`, `user_id`, object key, and timestamp
 - Worker downloads the image from MinIO, runs YOLO, and callbacks to `/api/internal/v1/vision/results`
-- API stores `vision_results`, updates `image_requests`, creates alerts, fans out notification inbox rows, and sends push through installation tokens when present
+- API stores `vision_results`, updates `image_requests`, and creates alerts independently from the installation notification inbox
+- Notification inbox and push are reserved for system, account, announcement, and other general events; alerts are read through alert APIs
 
 Admin:
 
@@ -69,6 +70,17 @@ Admin:
 Actors are limited to `admin` and `user`. A `user` account manages one cane. Phone installations may contain multiple user accounts, and those accounts share one installation-scoped notification inbox.
 
 More detail: `docs/workflows.md`.
+
+## Development Test Alert
+
+The dev-only test endpoint is registered when neither `APP_ENV` nor legacy `ENVIRONMENT` is `production`, or when `ENABLE_DEV_ENDPOINTS=true`:
+
+```bash
+curl -X POST http://localhost:8000/api/mobile/v1/dev/test-alert \
+  -H "Authorization: Bearer <mobile-access-token>"
+```
+
+It creates and returns a new high-risk `OBSTACLE` alert for the authenticated user's cane. The endpoint is absent from the production routing table by default. Do not set `ENABLE_DEV_ENDPOINTS=true` in production.
 
 ## Verification
 

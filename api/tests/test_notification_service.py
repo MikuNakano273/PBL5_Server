@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from unittest import TestCase
 
+from app.common.exceptions.base import AppError
 from app.services.notification_service import NotificationService
 
 
@@ -55,23 +56,24 @@ class NotificationServiceTest(TestCase):
         service.push_sender = _PushSender()
         return service
 
-    def test_create_event_and_fanout_alert_to_related_installations_with_push_token(self):
+    def test_create_system_notification_fans_out_to_related_installations_with_push_token(self):
         service = self._service()
-        alert = {
-            "_id": "alert-1",
-            "user_id": "user-1",
-            "device_id": "device-1",
-            "alert_type": "vision_obstacle",
-            "title": "Obstacle detected",
-            "message": "Detected chair. Nearest obstacle 65 cm.",
-            "risk_level": "high",
-            "triggered_at": datetime(2026, 4, 25, 12, 0, tzinfo=UTC),
-        }
+        result = service.create_system_notification(
+            user_id="user-1",
+            event_type="maintenance_scheduled",
+            category="system",
+            title="Scheduled maintenance",
+            message="The service will be unavailable from 02:00 to 02:15.",
+            priority="normal",
+            created_at=datetime(2026, 4, 25, 12, 0, tzinfo=UTC),
+        )
 
-        result = service.create_notification_event_from_alert(alert)
-
-        self.assertEqual(service.notification_event_repository.created_payload["alert_id"], "alert-1")
-        self.assertEqual(service.notification_event_repository.created_payload["event_type"], "alert_created")
+        payload = service.notification_event_repository.created_payload
+        self.assertEqual(payload["event_type"], "maintenance_scheduled")
+        self.assertEqual(payload["category"], "system")
+        self.assertEqual(payload["priority"], "normal")
+        self.assertNotIn("alert_id", payload)
+        self.assertNotIn("risk_level", payload)
         self.assertEqual(service.installation_account_repository.user_ids, ["user-1"])
         self.assertEqual(
             service.installation_notification_repository.created_payloads,
@@ -82,3 +84,18 @@ class NotificationServiceTest(TestCase):
         self.assertEqual(service.push_sender.sent, [{"installation": "installation-user", "event": "event-1"}])
         self.assertEqual(result["installation_count"], 1)
         self.assertEqual(result["push_count"], 1)
+
+    def test_create_system_notification_rejects_alert_event_type(self):
+        service = self._service()
+
+        with self.assertRaises(AppError) as error:
+            service.create_system_notification(
+                user_id="user-1",
+                event_type="alert_created",
+                category="system",
+                title="Obstacle",
+                message="Obstacle ahead",
+            )
+
+        self.assertEqual(error.exception.code, "invalid_notification_event")
+        self.assertIsNone(service.notification_event_repository.created_payload)

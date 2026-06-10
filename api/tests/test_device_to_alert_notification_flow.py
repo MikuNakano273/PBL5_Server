@@ -3,7 +3,6 @@ from unittest import TestCase
 
 from app.common.schemas.internal import VisionResultCallbackRequest
 from app.services.alert_service import AlertService
-from app.services.notification_service import NotificationService
 from app.services.vision_result_service import VisionResultService
 
 
@@ -58,59 +57,11 @@ class _LiveStatusRepo:
         return 1
 
 
-class _EventRepo:
-    def __init__(self):
-        self.created = None
-
-    def create_event(self, payload):
-        self.created = dict(payload)
-        return "event-1"
-
-
-class _InboxRepo:
-    def __init__(self):
-        self.created = []
-
-    def create_notification(self, payload):
-        self.created.append(dict(payload))
-        return f"inbox-{len(self.created)}"
-
-
-class _AccountRepo:
-    def list_installation_ids_for_users(self, user_ids):
-        self.user_ids = list(user_ids)
-        return ["installation-user"]
-
-
-class _InstallationRepo:
-    def list_by_ids(self, installation_ids):
-        return [
-            {"_id": "installation-user", "push_token": "push-token-1", "push_provider": "fcm"},
-        ]
-
-
-class _PushSender:
-    def __init__(self):
-        self.sent = []
-
-    def send(self, installation, event):
-        self.sent.append((installation["_id"], event["_id"]))
-        return {"sent": True}
-
-
-class DeviceToAlertNotificationFlowTest(TestCase):
-    def test_worker_callback_creates_alert_notification_inbox_and_push_for_related_installations(self):
-        notification_service = NotificationService.__new__(NotificationService)
-        notification_service.notification_event_repository = _EventRepo()
-        notification_service.installation_notification_repository = _InboxRepo()
-        notification_service.installation_account_repository = _AccountRepo()
-        notification_service.installation_repository = _InstallationRepo()
-        notification_service.push_sender = _PushSender()
-
+class DeviceToAlertFlowTest(TestCase):
+    def test_worker_callback_creates_alert_without_notification(self):
         alert_service = AlertService.__new__(AlertService)
         alert_service.alert_repository = _AlertRepo()
         alert_service.user_live_status_repository = _LiveStatusRepo()
-        alert_service.notification_service = notification_service
         alert_service.dedup_window_seconds = 300
 
         vision_service = VisionResultService.__new__(VisionResultService)
@@ -134,7 +85,3 @@ class DeviceToAlertNotificationFlowTest(TestCase):
         self.assertEqual(response["risk_level"], "high")
         self.assertEqual(vision_service.image_request_repository.updated[-1]["status"], "done")
         self.assertEqual(alert_service.alert_repository.created["image_request_id"], "request-1")
-        self.assertEqual(notification_service.notification_event_repository.created["alert_id"], "alert-1")
-        self.assertEqual(notification_service.installation_account_repository.user_ids, ["user-1"])
-        self.assertEqual(len(notification_service.installation_notification_repository.created), 1)
-        self.assertEqual(notification_service.push_sender.sent, [("installation-user", "event-1")])

@@ -5,7 +5,6 @@ from app.core.config import get_settings
 from app.core.database import get_database
 from app.repositories.alert_repository import AlertRepository
 from app.repositories.user_live_status_repository import UserLiveStatusRepository
-from app.services.notification_service import NotificationService
 
 
 class AlertService:
@@ -14,7 +13,6 @@ class AlertService:
         settings = get_settings()
         self.alert_repository = AlertRepository(database)
         self.user_live_status_repository = UserLiveStatusRepository(database)
-        self.notification_service = NotificationService(database)
         self.dedup_window_seconds = settings.alert_dedup_window_seconds
 
     def create_alert_from_vision_result(
@@ -83,6 +81,24 @@ class AlertService:
             live_status="offline",
         )
 
+    def create_test_alert(
+        self,
+        *,
+        user_id: str,
+        device_id: str,
+    ) -> dict[str, Any]:
+        return self._create_alert(
+            user_id=user_id,
+            device_id=device_id,
+            alert_type="OBSTACLE",
+            title="Test obstacle alert",
+            message="Development test alert: obstacle detected.",
+            risk_level="high",
+            triggered_at=datetime.now(UTC),
+            live_status="danger",
+            deduplicate=False,
+        )
+
     def _create_alert(
         self,
         *,
@@ -98,17 +114,19 @@ class AlertService:
         lat: float | None = None,
         lng: float | None = None,
         distance_cm: float | None = None,
+        deduplicate: bool = True,
     ) -> dict[str, Any]:
-        since = triggered_at - timedelta(seconds=self.dedup_window_seconds)
-        duplicate = self.alert_repository.find_recent_duplicate(
-            user_id,
-            device_id,
-            alert_type,
-            since,
-            image_request_id=image_request_id,
-        )
-        if duplicate is not None:
-            return {"created": False, "deduplicated": True, "id": str(duplicate["_id"])}
+        if deduplicate:
+            since = triggered_at - timedelta(seconds=self.dedup_window_seconds)
+            duplicate = self.alert_repository.find_recent_duplicate(
+                user_id,
+                device_id,
+                alert_type,
+                since,
+                image_request_id=image_request_id,
+            )
+            if duplicate is not None:
+                return {"created": False, "deduplicated": True, "id": str(duplicate["_id"])}
 
         payload = {
             "user_id": user_id,
@@ -136,6 +154,4 @@ class AlertService:
                 "updated_at": datetime.now(UTC),
             },
         )
-        alert = {"_id": alert_id, **payload}
-        notification = self.notification_service.create_notification_event_from_alert(alert)
-        return {"created": True, "id": alert_id, "alert": payload, "notification": notification}
+        return {"created": True, "id": alert_id, "alert": payload}

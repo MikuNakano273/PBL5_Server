@@ -81,11 +81,12 @@ class InstallationNotificationTest(TestCase):
             events={
                 "event-1": {
                     "_id": "event-1",
-                    "event_type": "alert_created",
+                    "event_type": "maintenance_scheduled",
                     "user_id": "user-1",
-                    "title": "Obstacle",
-                    "message": "Obstacle ahead",
-                    "risk_level": "warning",
+                    "category": "system",
+                    "title": "Scheduled maintenance",
+                    "message": "Service maintenance is scheduled.",
+                    "priority": "normal",
                     "created_at": created_at,
                 }
             },
@@ -97,8 +98,55 @@ class InstallationNotificationTest(TestCase):
         self.assertIsNone(notifications[0]["read_at"])
         self.assertEqual(notifications[0]["created_at"], created_at.isoformat())
         self.assertEqual(notifications[0]["event"]["id"], "event-1")
-        self.assertEqual(notifications[0]["event"]["title"], "Obstacle")
+        self.assertEqual(notifications[0]["event"]["title"], "Scheduled maintenance")
         self.assertEqual(notifications[0]["event"]["created_at"], created_at.isoformat())
+
+    def test_list_notifications_excludes_legacy_alert_events(self):
+        created_at = datetime(2026, 4, 25, 9, 0, tzinfo=UTC)
+        service = self._service(
+            notifications=[
+                {
+                    "_id": "inbox-alert",
+                    "installation_id": "installation-1",
+                    "notification_event_id": "event-alert",
+                    "read_at": None,
+                    "created_at": created_at,
+                },
+                {
+                    "_id": "inbox-system",
+                    "installation_id": "installation-1",
+                    "notification_event_id": "event-system",
+                    "read_at": None,
+                    "created_at": created_at,
+                },
+            ],
+            events={
+                "event-alert": {
+                    "_id": "event-alert",
+                    "event_type": "alert_created",
+                    "alert_id": "alert-1",
+                    "user_id": "user-1",
+                    "title": "Obstacle",
+                    "message": "Obstacle ahead",
+                    "risk_level": "high",
+                    "created_at": created_at,
+                },
+                "event-system": {
+                    "_id": "event-system",
+                    "event_type": "maintenance_scheduled",
+                    "user_id": "user-1",
+                    "category": "system",
+                    "title": "Scheduled maintenance",
+                    "message": "Service maintenance is scheduled.",
+                    "priority": "normal",
+                    "created_at": created_at,
+                },
+            },
+        )
+
+        notifications = service.list_notifications("installation-1")
+
+        self.assertEqual([item["id"] for item in notifications], ["inbox-system"])
 
     def test_mark_notification_read_requires_matching_installation(self):
         service = self._service(
@@ -134,11 +182,12 @@ class InstallationNotificationTest(TestCase):
             events={
                 "event-1": {
                     "_id": "event-1",
-                    "event_type": "alert_created",
+                    "event_type": "account_updated",
                     "user_id": "user-1",
-                    "title": "Obstacle",
-                    "message": "Obstacle ahead",
-                    "risk_level": "warning",
+                    "category": "account",
+                    "title": "Account updated",
+                    "message": "Your account information was updated.",
+                    "priority": "normal",
                     "created_at": created_at,
                 }
             },
@@ -156,19 +205,37 @@ class InstallationNotificationTest(TestCase):
         notification = service.create_notification_for_installation(
             "installation-1",
             {
-                "event_type": "alert_created",
+                "event_type": "new_feature",
                 "user_id": "user-1",
-                "device_id": "device-1",
-                "title": "Obstacle",
-                "message": "Obstacle ahead",
-                "risk_level": "warning",
+                "category": "announcement",
+                "title": "New feature",
+                "message": "A new navigation feature is available.",
+                "priority": "normal",
             },
         )
 
-        self.assertEqual(service.notification_event_repository.created_payload["title"], "Obstacle")
+        self.assertEqual(service.notification_event_repository.created_payload["title"], "New feature")
         self.assertEqual(
             service.installation_notification_repository.created_payload,
             {"installation_id": "installation-1", "notification_event_id": "event-created"},
         )
         self.assertEqual(notification["id"], "inbox-created")
         self.assertEqual(notification["event"]["id"], "event-created")
+
+    def test_create_notification_for_installation_rejects_alert_payload(self):
+        service = self._service(notifications=[], events={})
+
+        with self.assertRaises(AppError) as error:
+            service.create_notification_for_installation(
+                "installation-1",
+                {
+                    "event_type": "alert_created",
+                    "alert_id": "alert-1",
+                    "user_id": "user-1",
+                    "title": "Obstacle",
+                    "message": "Obstacle ahead",
+                    "risk_level": "high",
+                },
+            )
+
+        self.assertEqual(error.exception.code, "invalid_notification_event")

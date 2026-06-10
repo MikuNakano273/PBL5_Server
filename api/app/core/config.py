@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     app_name: str = "PBL5 Server API"
     app_version: str = "0.1.0"
     environment: str = Field(default="development", alias="ENVIRONMENT")
+    app_env: str | None = Field(default=None, alias="APP_ENV")
+    enable_dev_endpoints: bool = Field(default=False, alias="ENABLE_DEV_ENDPOINTS")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
     api_prefix: str = "/api"
@@ -88,6 +90,15 @@ class Settings(BaseSettings):
             for value in self.vision_retry_intervals.split(",")
             if value.strip()
         )
+
+    @property
+    def dev_endpoints_enabled(self) -> bool:
+        configured_environments = (self.app_env, self.environment)
+        is_production = any(
+            value is not None and value.strip().lower() == "production"
+            for value in configured_environments
+        )
+        return self.enable_dev_endpoints or not is_production
 
 
 @lru_cache

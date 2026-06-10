@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
+from app.api.routers import dev
 from app.common.exceptions.handlers import register_exception_handlers
 from app.core.config import get_settings
 from app.core.database import close_mongo, connect_mongo
@@ -43,6 +44,8 @@ def create_app() -> FastAPI:
     )
     register_exception_handlers(app)
     app.include_router(api_router)
+    if settings.dev_endpoints_enabled:
+        app.include_router(dev.router, prefix="/api/mobile/v1/dev", tags=["development"])
     return app
 
 

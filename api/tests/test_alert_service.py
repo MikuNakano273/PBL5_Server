@@ -34,21 +34,11 @@ class _LiveStatusRepo:
         return 1
 
 
-class _NotificationService:
-    def __init__(self):
-        self.alert = None
-
-    def create_notification_event_from_alert(self, alert):
-        self.alert = dict(alert)
-        return {"event_id": "event-1", "installation_count": 2, "push_count": 1}
-
-
 class AlertServiceTest(TestCase):
     def _service(self, duplicate=None):
         service = AlertService.__new__(AlertService)
         service.alert_repository = _AlertRepo(duplicate)
         service.user_live_status_repository = _LiveStatusRepo()
-        service.notification_service = _NotificationService()
         service.dedup_window_seconds = 300
         return service
 
@@ -80,8 +70,7 @@ class AlertServiceTest(TestCase):
         self.assertEqual(payload["distance_cm"], 65)
         self.assertEqual(service.user_live_status_repository.updated["current_safety_status"], "danger")
         self.assertEqual(service.user_live_status_repository.updated["last_alert_at"], vision_result["processed_at"])
-        self.assertEqual(service.notification_service.alert["alert_type"], "vision_obstacle")
-        self.assertEqual(service.notification_service.alert["_id"], "alert-1")
+        self.assertNotIn("notification", alert)
 
     def test_create_alert_from_distance_dedups_recent_open_alert(self):
         duplicate = {"_id": "alert-existing", "alert_type": "distance_danger"}
@@ -99,7 +88,6 @@ class AlertServiceTest(TestCase):
         self.assertTrue(alert["deduplicated"])
         self.assertEqual(alert["id"], "alert-existing")
         self.assertIsNone(service.alert_repository.created_payload)
-        self.assertIsNone(service.notification_service.alert)
         self.assertEqual(service.alert_repository.duplicate_query["since"], recorded_at - timedelta(seconds=300))
 
     def test_create_alert_from_offline_device_marks_live_status_offline(self):
@@ -118,3 +106,15 @@ class AlertServiceTest(TestCase):
         self.assertEqual(payload["risk_level"], "warning")
         self.assertEqual(service.user_live_status_repository.updated["current_safety_status"], "offline")
         self.assertEqual(service.user_live_status_repository.updated["last_alert_at"], detected_at)
+
+    def test_create_test_alert_creates_high_risk_obstacle_without_dedup(self):
+        service = self._service(duplicate={"_id": "alert-existing"})
+
+        alert = service.create_test_alert(user_id="user-1", device_id="device-1")
+
+        payload = service.alert_repository.created_payload
+        self.assertTrue(alert["created"])
+        self.assertEqual(payload["risk_level"], "high")
+        self.assertEqual(payload["alert_type"], "OBSTACLE")
+        self.assertEqual(service.user_live_status_repository.updated["current_safety_status"], "danger")
+        self.assertIsNone(service.alert_repository.duplicate_query)

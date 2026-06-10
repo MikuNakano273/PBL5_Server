@@ -100,9 +100,20 @@ class InstallationService:
 
     def list_notifications(self, installation_id: str) -> list[dict[str, Any]]:
         notifications = self.installation_notification_repository.list_by_installation(installation_id)
-        return [self._serialize_installation_notification(notification) for notification in notifications]
+        serialized_notifications = []
+        for notification in notifications:
+            serialized = self._serialize_installation_notification(notification)
+            if serialized["event"] is not None and not self._is_alert_event(serialized["event"]):
+                serialized_notifications.append(serialized)
+        return serialized_notifications
 
     def create_notification_for_installation(self, installation_id: str, event_payload: dict[str, Any]) -> dict[str, Any]:
+        if self._is_alert_event(event_payload):
+            raise AppError(
+                code="invalid_notification_event",
+                message="Alert events must not be stored as notifications.",
+                status_code=400,
+            )
         notification_event_id = self.notification_event_repository.create_event(event_payload)
         installation_notification_id = self.installation_notification_repository.create_notification(
             {
@@ -142,3 +153,6 @@ class InstallationService:
             if hasattr(value, "isoformat"):
                 serialized[key] = value.isoformat()
         return serialized
+
+    def _is_alert_event(self, event: dict[str, Any]) -> bool:
+        return event.get("event_type") == "alert_created" or "alert_id" in event or "risk_level" in event

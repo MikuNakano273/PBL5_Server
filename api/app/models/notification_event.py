@@ -14,10 +14,9 @@ INDEXES = [
 
 class NotificationEventDocument(MongoDocument):
     event_type: str
-    alert_id: str | None = None
     user_id: str
-    device_id: str
+    category: str
     title: str
     message: str
-    risk_level: str
+    priority: str = "normal"
     created_at: datetime

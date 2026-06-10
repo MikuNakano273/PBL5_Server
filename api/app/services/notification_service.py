@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from typing import Any
 
+from app.common.exceptions.base import AppError
 from app.core.database import get_database
 from app.repositories.installation_account_repository import InstallationAccountRepository
 from app.repositories.installation_notification_repository import InstallationNotificationRepository
@@ -18,17 +19,31 @@ class NotificationService:
         self.installation_repository = MobileInstallationRepository(database)
         self.push_sender = push_sender or PushNotificationService()
 
-    def create_notification_event_from_alert(self, alert: dict[str, Any]) -> dict[str, Any]:
-        created_at = alert.get("triggered_at") or datetime.now(UTC)
+    def create_system_notification(
+        self,
+        *,
+        user_id: str,
+        event_type: str,
+        category: str,
+        title: str,
+        message: str,
+        priority: str = "normal",
+        created_at: datetime | None = None,
+    ) -> dict[str, Any]:
+        if event_type == "alert_created":
+            raise AppError(
+                code="invalid_notification_event",
+                message="Alert events must not be stored as notifications.",
+                status_code=400,
+            )
         event_payload = {
-            "event_type": "alert_created",
-            "alert_id": str(alert["_id"]),
-            "user_id": alert["user_id"],
-            "device_id": alert.get("device_id"),
-            "title": alert["title"],
-            "message": alert["message"],
-            "risk_level": alert["risk_level"],
-            "created_at": created_at,
+            "event_type": event_type,
+            "user_id": user_id,
+            "category": category,
+            "title": title,
+            "message": message,
+            "priority": priority,
+            "created_at": created_at or datetime.now(UTC),
         }
         event_id = self.notification_event_repository.create_event(event_payload)
         event = {"_id": event_id, **event_payload}

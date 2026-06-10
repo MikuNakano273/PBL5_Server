@@ -15,6 +15,7 @@ from app.services.auth_service import AuthService
 from app.services.cane_auth_service import CaneAuthService
 from app.services.dashboard_service import DashboardService
 from app.services.device_config_service import DeviceConfigService
+from app.services.dev_service import DevService
 from app.services.distance_service import DistanceService
 from app.services.gps_service import GpsService
 from app.services.heartbeat_service import HeartbeatService
@@ -70,6 +71,10 @@ def get_image_request_service(database=Depends(get_database)) -> ImageRequestSer
 
 def get_device_config_service(database=Depends(get_database)) -> DeviceConfigService:
     return DeviceConfigService(database)
+
+
+def get_dev_service(database=Depends(get_database)) -> DevService:
+    return DevService(database)
 
 
 def get_internal_vision_service(database=Depends(get_database)) -> InternalVisionService:

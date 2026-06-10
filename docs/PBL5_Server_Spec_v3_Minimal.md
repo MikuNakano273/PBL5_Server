@@ -126,18 +126,17 @@ Sự kiện thông báo phát sinh từ hệ thống.
 ```json
 {
   "_id": "ne_001",
-  "event_type": "alert",
-  "alert_id": "a_001",
-  "blind_user_id": "u_blind_1",
-  "device_id": "d_001",
-  "title": "Cảnh báo khẩn",
-  "message": "Phát hiện vật cản ở khoảng cách 48 cm",
-  "risk_level": "high",
+  "event_type": "maintenance_scheduled",
+  "user_id": "u_001",
+  "category": "system",
+  "title": "Bảo trì hệ thống",
+  "message": "Dịch vụ sẽ tạm gián đoạn từ 02:00 đến 02:15.",
+  "priority": "normal",
   "created_at": "2026-04-17T09:20:00Z"
 }
 ```
 
-Dùng để chuẩn hóa mọi thông báo xuất hiện trong app/push.
+Dùng để chuẩn hóa thông báo hệ thống, tài khoản và thông báo chung xuất hiện trong app/push. Alert không được sao chép vào notification.
 
 Index:
 - index: `created_at`
@@ -562,14 +561,13 @@ Bản API đã được tinh gọn và sửa cho workflow switch account. Nhóm 
 6. Không cần nhập lại mật khẩu nếu account đã tồn tại trong `installation_accounts`.
 
 ## 8.2. Luồng thông báo chung theo máy
-1. Hệ thống tạo `alert`.
-2. Từ alert sinh `notification_event`.
-3. Server xác định những installation nào có account liên quan:
-   - account blind đang sở hữu thiết bị
-   - account family đang theo dõi blind user đó
-4. Với mỗi installation hợp lệ, server tạo `installation_notification`.
-5. Nếu installation có `push_token`, gửi FCM.
-6. App đọc inbox chung bằng `GET /installations/me/notifications`.
+1. Hệ thống tạo `notification_event` cho sự kiện hệ thống, tài khoản hoặc thông báo chung.
+2. Server xác định những installation có account liên quan.
+3. Với mỗi installation hợp lệ, server tạo `installation_notification`.
+4. Nếu installation có `push_token`, gửi FCM.
+5. App đọc inbox chung bằng `GET /installations/me/notifications`.
+
+Alert được đọc qua nhóm alert API riêng và không sinh `notification_event`.
 
 ## 8.3. Luồng ảnh YOLO
 1. ESP32 gọi `POST /requests`.
@@ -580,7 +578,7 @@ Bản API đã được tinh gọn và sửa cho workflow switch account. Nhóm 
 6. Worker tải ảnh, chạy YOLO.
 7. Worker callback `POST /internal/v1/vision/results`.
 8. API lưu `vision_results`.
-9. Nếu rủi ro cao -> tạo `alert` -> tạo `notification_event` -> phát push/inbox.
+9. Nếu rủi ro cao -> tạo `alert`; không sao chép alert sang notification inbox.
 
 ---
 
@@ -623,7 +621,7 @@ Các hàm nên có:
 - `get_alert_detail(alert_id, current_user_id)`
 
 ## 9.5. NotificationService
-- `create_notification_event_from_alert(alert)`
+- `create_system_notification(user_id, event_type, category, title, message, priority)`
 - `fanout_notification_to_installations(event)`
 - `list_installation_notifications(installation_id, page, limit)`
 - `mark_notification_as_read(installation_id, notification_id)`

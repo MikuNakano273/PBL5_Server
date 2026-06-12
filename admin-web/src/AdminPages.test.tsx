@@ -35,7 +35,7 @@ test("edits the allowed user fields and displays the update", async () => {
 test("assigns a device to a loaded user", async () => {
   const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
     const url = String(input);
-    if (init?.method === "POST") return new Response(JSON.stringify({ id: "d1", user_id: "u1" }), { status: 200 });
+    if (init?.method === "POST") return new Response(JSON.stringify({ id: "d1", owner_user_id: "u1" }), { status: 200 });
     if (url.includes("/users")) return new Response(JSON.stringify([{ id: "u1", full_name: "User One" }]), { status: 200 });
     return new Response(JSON.stringify([{ id: "d1", device_code: "CANE-1", status: "online" }]), { status: 200 });
   });
@@ -48,6 +48,25 @@ test("assigns a device to a loaded user", async () => {
   await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) =>
     init?.method === "POST" && String(init.body) === JSON.stringify({ user_id: "u1" }),
   )).toBe(true));
+});
+
+test("shows the assigned user's name for a device owner", async () => {
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    const url = String(input);
+    if (url.includes("/users")) {
+      return new Response(JSON.stringify([{ id: "u1", full_name: "Đặng Quốc Nam" }]), { status: 200 });
+    }
+    return new Response(JSON.stringify([{
+      id: "d1",
+      device_code: "pbl5-01",
+      owner_user_id: "u1",
+      status: "offline",
+    }]), { status: 200 });
+  });
+
+  renderRoute("/devices");
+
+  expect(await screen.findByText("Đặng Quốc Nam")).toBeInTheDocument();
 });
 
 test("keeps the user dialog open and shows a mutation error", async () => {
@@ -86,10 +105,54 @@ test("renders missing optional fields neutrally and paginates a full page", asyn
   await waitFor(() => expect(fetchMock.mock.calls.some(([input]) => String(input).includes("page=2"))).toBe(true));
 });
 
-test("renders the demo monitor with the latest frame and scene context", async () => {
+test("renders uploaded server images on the image requests page", async () => {
   vi.spyOn(globalThis, "fetch").mockResolvedValue(
+    new Response(JSON.stringify([{
+      id: "request-1",
+      device_id: "device-1",
+      user_id: "user-1",
+      status: "done",
+      created_at: "2026-06-10T08:00:00+00:00",
+      image_url: "https://images.example/request-1.jpg",
+    }]), { status: 200 }),
+  );
+
+  renderRoute("/image-requests");
+
+  expect(await screen.findByRole("img", { name: "Image request request-1" })).toHaveAttribute(
+    "src",
+    "https://images.example/request-1.jpg",
+  );
+  expect(screen.getByText("done")).toBeInTheDocument();
+});
+
+test("renders scene context on the alerts page", async () => {
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(
+    new Response(JSON.stringify([{
+      id: "alert-1",
+      alert_type: "vision_obstacle",
+      risk_level: "high",
+      triggered_at: "2026-06-10T08:00:00+00:00",
+      scene_context: {
+        objects: [{ label: "chair", confidence: 0.92 }],
+        risk_level: "high",
+        nearest_obstacle_cm: 65,
+        summary_text: "Detected chair. Nearest obstacle 65 cm.",
+      },
+    }]), { status: 200 }),
+  );
+
+  renderRoute("/alerts");
+
+  expect(await screen.findByText("Detected chair. Nearest obstacle 65 cm.")).toBeInTheDocument();
+  expect(screen.getByText("chair (92%)")).toBeInTheDocument();
+  expect(screen.getByText("65 cm")).toBeInTheDocument();
+});
+
+test("renders the demo monitor with the latest frame and scene context", async () => {
+  const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
     new Response(JSON.stringify({
-      device_id: "pbl5-01",
+      device_id: "pbl5-02",
       latest_sensor: {
         seq: 7,
         distance_cm: 72.4,
@@ -114,6 +177,9 @@ test("renders the demo monitor with the latest frame and scene context", async (
   renderRoute("/demo-monitor");
 
   expect(await screen.findByRole("heading", { name: "Demo Monitor" })).toBeInTheDocument();
+  expect(screen.getByText("Device pbl5-02")).toBeInTheDocument();
+  expect(fetchMock.mock.calls.some(([input]) => String(input).endsWith("/api/v1/state"))).toBe(true);
+  expect(fetchMock.mock.calls.some(([input]) => String(input).includes("device_id="))).toBe(false);
   expect(screen.getByRole("img", { name: "Latest ESP32-CAM frame" })).toHaveAttribute(
     "src",
     expect.stringContaining("/uploads/frame_45.jpg"),

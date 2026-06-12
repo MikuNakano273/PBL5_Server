@@ -23,7 +23,7 @@ class AuthService:
         self.refresh_token_repository = RefreshTokenRepository(database)
 
     def authenticate_user(self, email: str, password: str) -> dict[str, Any]:
-        user = self.user_repository.get_by_email(email)
+        user = self.user_repository.get_by_email(email.strip().lower())
         if user is None or not verify_password(password, user["password_hash"]):
             raise AppError(code="invalid_credentials", message="Email or password is invalid.", status_code=401)
         return user

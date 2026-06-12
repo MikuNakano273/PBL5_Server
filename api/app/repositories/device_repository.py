@@ -29,7 +29,11 @@ class DeviceRepository(BaseRepository):
         return self.find_one({'_id': device_key})
 
     def update_heartbeat(self, device_id: str, payload: dict[str, Any]) -> int:
-        return self.update_one({'_id': device_id}, payload)
+        try:
+            device_key = ObjectId(device_id)
+        except InvalidId:
+            device_key = device_id
+        return self.update_one({'_id': device_key}, payload)
 
     def list_by_user(self, user_id: str) -> list[dict[str, Any]]:
         return list(self.collection.find({'owner_user_id': user_id}).sort('created_at', 1))

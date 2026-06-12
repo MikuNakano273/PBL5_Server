@@ -8,7 +8,9 @@ from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 from app.services.demo_picture_store import DemoPictureStore
+from app.services.demo_frame_persistence_service import DemoFramePersistenceService
 from app.services.demo_scene_context import build_scene_context_from_yolo, detect_image_bytes
+from app.services.demo_sensor_persistence_service import DemoSensorPersistenceService
 
 router = APIRouter()
 
@@ -36,12 +38,21 @@ class DemoSensorPayload(BaseModel):
 
 _latest_sensor_by_device: dict[str, dict] = {}
 _latest_frame_by_device: dict[str, dict] = {}
+_latest_event_at_by_device: dict[str, datetime] = {}
 _frame_bytes_by_id: dict[str, bytes] = {}
 _scene_context_by_device: dict[str, dict] = {}
 
 
 def get_picture_store() -> DemoPictureStore:
     return DemoPictureStore(Path(get_settings().pictures_dir))
+
+
+def get_demo_frame_persistence_service() -> DemoFramePersistenceService:
+    return DemoFramePersistenceService()
+
+
+def get_demo_sensor_persistence_service() -> DemoSensorPersistenceService:
+    return DemoSensorPersistenceService()
 
 
 def _now_ms() -> int:
@@ -85,12 +96,43 @@ def _store_scene_context(device_id: str, detection: dict) -> None:
     }
 
 
+def _latest_picture_for_device(device_id: str | None = None) -> dict | None:
+    pictures = get_picture_store().list_pictures()
+    if device_id is None:
+        return pictures[0] if pictures else None
+    return next((picture for picture in pictures if picture.get("device_id") == device_id), None)
+
+
+def _parse_created_at(value: object) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _latest_device_id(picture: dict | None) -> str:
+    candidates = dict(_latest_event_at_by_device)
+    if picture and picture.get("device_id"):
+        created_at = _parse_created_at(picture.get("created_at"))
+        if created_at is not None:
+            device_id = str(picture["device_id"])
+            candidates[device_id] = max(candidates.get(device_id, created_at), created_at)
+    if not candidates:
+        return "unknown"
+    return max(candidates, key=candidates.__getitem__)
+
+
 @router.post("/sensor")
 async def ingest_sensor(payload: DemoSensorPayload) -> dict:
     sensor = payload.model_dump()
     _latest_sensor_by_device[payload.device_id] = sensor
+    _latest_event_at_by_device[payload.device_id] = datetime.now(UTC)
+    persistence = get_demo_sensor_persistence_service().persist_sensor(sensor)
     return {
         "ok": True,
+        "persistence": persistence,
         "scene_context": _context_for_device(payload.device_id),
     }
 
@@ -112,7 +154,8 @@ async def upload_frame(
 
     picture_store = get_picture_store()
     frame_id = picture_store.reserve_frame_id(f"frame_{cam_seq}")
-    created_at = datetime.now(UTC).isoformat()
+    created_at_value = datetime.now(UTC)
+    created_at = created_at_value.isoformat()
     metadata = picture_store.save(
         frame_id,
         image_bytes,
@@ -142,10 +185,21 @@ async def upload_frame(
         "millis": millis,
     }
     _latest_frame_by_device[device_id] = frame
+    _latest_event_at_by_device[device_id] = datetime.now(UTC)
+    persistence = get_demo_frame_persistence_service().persist_frame(
+        device_code=device_id,
+        frame_id=frame_id,
+        image_url=metadata["image_url"],
+        created_at=created_at_value,
+        sensor=sensor,
+        yolo_result=yolo_result,
+        scene_context=detection,
+    )
 
     return {
         "ok": True,
         "frame_id": frame_id,
+        "persistence": persistence,
         "matched_sensor": {
             "seq": sensor["seq"] if sensor else None,
             "distance_cm": sensor["distance_cm"] if sensor else None,
@@ -156,24 +210,44 @@ async def upload_frame(
 
 
 @router.get("/state")
-async def get_state(device_id: str) -> dict:
+async def get_state(device_id: str | None = None) -> dict:
+    picture = _latest_picture_for_device(device_id)
+    if device_id is None:
+        device_id = _latest_device_id(picture)
+        picture = _latest_picture_for_device(device_id)
+
     sensor = _latest_sensor_by_device.get(device_id)
     frame = _latest_frame_by_device.get(device_id)
+    if frame is None and picture is not None:
+        frame = {
+            "frame_id": picture.get("frame_id"),
+            "image_url": picture.get("image_url"),
+        }
+    if sensor is None and picture is not None:
+        sensor = picture.get("matched_sensor")
+
+    scene_context = _context_for_device(device_id)
+    if scene_context["type"] == "stale" and picture and picture.get("scene_context"):
+        scene_context = {
+            **_default_scene_context(),
+            **picture["scene_context"],
+            "fresh": False,
+        }
 
     return {
         "device_id": device_id,
         "latest_sensor": {
             "seq": sensor["seq"] if sensor else None,
             "distance_cm": sensor["distance_cm"] if sensor else None,
-            "obstacle_in_1m": sensor["obstacle_in_1m"] if sensor else False,
-            "alert_level": sensor["alert_level"] if sensor else "clear",
-            "gps": sensor["gps"] if sensor else None,
+            "obstacle_in_1m": sensor.get("obstacle_in_1m", False) if sensor else False,
+            "alert_level": sensor.get("alert_level", "clear") if sensor else "clear",
+            "gps": sensor.get("gps") if sensor else None,
         },
         "latest_frame": {
             "frame_id": frame["frame_id"] if frame else None,
             "image_url": frame["image_url"] if frame else None,
         },
-        "scene_context": _context_for_device(device_id),
+        "scene_context": scene_context,
     }
 
 

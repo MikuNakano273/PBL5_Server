@@ -1,12 +1,16 @@
 from typing import Any
+from pathlib import Path
+from urllib.parse import urlparse
 
 from app.common.exceptions.base import AppError
 from app.common.schemas.admin import AdminUserUpdateRequest
+from app.core.config import get_settings
 from app.core.database import get_database
 from app.repositories.alert_repository import AlertRepository
 from app.repositories.device_repository import DeviceRepository
 from app.repositories.image_request_repository import ImageRequestRepository
 from app.repositories.user_repository import UserRepository
+from app.services.storage_service import StorageService
 
 
 class AdminService:
@@ -16,6 +20,8 @@ class AdminService:
         self.device_repository = DeviceRepository(database)
         self.image_request_repository = ImageRequestRepository(database)
         self.alert_repository = AlertRepository(database)
+        self.storage_service = None
+        self.pictures_dir = Path(get_settings().pictures_dir)
 
     def list_users(self, page: int = 1, limit: int = 20) -> list[dict[str, Any]]:
         return [self._serialize_document(user) for user in self.user_repository.list_users(page, limit)]
@@ -43,7 +49,17 @@ class AdminService:
         return self._serialize_document(device)
 
     def list_image_requests(self, page: int = 1, limit: int = 20) -> list[dict[str, Any]]:
-        return [self._serialize_document(request) for request in self.image_request_repository.list_all(page, limit)]
+        storage_service = self.storage_service or StorageService()
+        requests = []
+        for request in self.image_request_repository.list_all(page, limit):
+            serialized = self._serialize_document(request)
+            if self._is_missing_demo_image(serialized):
+                self.image_request_repository.delete_by_id(serialized["id"])
+                continue
+            if image_path := serialized.get("image_path"):
+                serialized["image_url"] = storage_service.get_presigned_download_url(image_path)
+            requests.append(serialized)
+        return requests
 
     def list_alerts(self, page: int = 1, limit: int = 20) -> list[dict[str, Any]]:
         return [self._serialize_document(alert) for alert in self.alert_repository.list_all(page, limit)]
@@ -55,3 +71,16 @@ class AdminService:
             if hasattr(value, "isoformat"):
                 serialized[key] = value.isoformat()
         return serialized
+
+    def _is_missing_demo_image(self, request: dict[str, Any]) -> bool:
+        if self.pictures_dir is None or request.get("image_path"):
+            return False
+        image_url = request.get("image_url")
+        if not isinstance(image_url, str):
+            return False
+        path = urlparse(image_url).path
+        prefix = "/uploads/"
+        if not path.startswith(prefix) or not path.endswith(".jpg"):
+            return False
+        frame_id = Path(path[len(prefix):]).stem
+        return not (self.pictures_dir / f"{frame_id}.jpg").is_file()

@@ -16,6 +16,10 @@ export default function DevicesPage() {
   const [pending, setPending] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [mutationError, setMutationError] = useState(false);
+  const ownerName = (device: Device) => {
+    const owner = users.items.find((user) => user.id === device.owner_user_id);
+    return owner?.full_name ?? owner?.email ?? device.owner_user_id;
+  };
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
@@ -31,7 +35,7 @@ export default function DevicesPage() {
   }
   return <><h1>{t("devices")}</h1>{feedback && <p className="success">{feedback}</p>}<ResourceTable items={devices.items} loading={devices.loading} error={devices.error} columns={[
     { label: "ID", render: (item) => item.id }, { label: "Code", render: (item) => item.device_code },
-    { label: t("user"), render: (item) => item.user_id }, { label: t("status"), render: (item) => <StatusBadge value={item.status} /> },
+    { label: t("user"), render: ownerName }, { label: t("status"), render: (item) => <StatusBadge value={item.status} /> },
     { label: "", render: (item) => <button onClick={() => setSelected(item)}>{t("assign")}</button> },
   ]} /><Pagination {...devices} />
   {selected && <Dialog title={t("assign")} close={() => setSelected(null)}><form className="dialog-form" onSubmit={save}>

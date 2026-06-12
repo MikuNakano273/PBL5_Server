@@ -94,6 +94,22 @@ class AdminAuthTest(TestCase):
 
         self.assertEqual(error.exception.status_code, 403)
 
+    def test_mobile_authentication_normalizes_email_case(self):
+        service = AuthService.__new__(AuthService)
+        service.user_repository = _UserRepo(
+            {
+                "_id": "user-1",
+                "email": "namqd2000@gmail.com",
+                "password_hash": hash_password("namdq"),
+                "role": "user",
+                "status": "active",
+            }
+        )
+
+        user = service.authenticate_user("NAMQD2000@GMAIL.COM", "namdq")
+
+        self.assertEqual(user["_id"], "user-1")
+
     def test_admin_guard_accepts_only_admin_scoped_token(self):
         token = create_access_token("admin-1", {"role": "admin", "token_use": "admin"})
 

@@ -1,5 +1,5 @@
 import { request } from "./client";
-import type { Device, Document, User, UserUpdate } from "./types";
+import type { Alert, Device, ImageRequest, User, UserUpdate } from "./types";
 
 const pageQuery = (page: number, limit: number) => `?page=${page}&limit=${limit}`;
 
@@ -16,5 +16,5 @@ export const listDevices = (page = 1, limit = 20) => request<Device[]>(`/devices
 export const assignDevice = (id: string, userId: string) =>
   request<Device>(`/devices/${id}/assign`, { method: "POST", body: JSON.stringify({ user_id: userId }) });
 export const listImageRequests = (page = 1, limit = 20) =>
-  request<Document[]>(`/image-requests${pageQuery(page, limit)}`);
-export const listAlerts = (page = 1, limit = 20) => request<Document[]>(`/alerts${pageQuery(page, limit)}`);
+  request<ImageRequest[]>(`/image-requests${pageQuery(page, limit)}`);
+export const listAlerts = (page = 1, limit = 20) => request<Alert[]>(`/alerts${pageQuery(page, limit)}`);

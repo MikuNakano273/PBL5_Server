@@ -23,7 +23,7 @@ class AlertRepository(BaseRepository):
         image_request_id: str | None = None,
     ) -> dict[str, Any] | None:
         if image_request_id is not None:
-            duplicate = self.find_one(
+            return self.find_one(
                 {
                     'user_id': user_id,
                     'device_id': device_id,
@@ -32,8 +32,6 @@ class AlertRepository(BaseRepository):
                     'status': 'open',
                 }
             )
-            if duplicate is not None:
-                return duplicate
 
         return self.collection.find_one(
             {

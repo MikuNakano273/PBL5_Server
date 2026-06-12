@@ -26,6 +26,16 @@ class AlertService:
 
         triggered_at = vision_result.get("processed_at") or datetime.now(UTC)
         gps_snapshot = image_request.get("gps_snapshot") or {}
+        scene_context = {
+            "objects": vision_result.get("objects", []),
+            "risk_level": risk_level,
+            "nearest_obstacle_cm": vision_result.get("nearest_obstacle_cm"),
+            "summary_text": vision_result.get("summary_text") or "Obstacle detected from camera image.",
+        }
+        if vision_result.get("scene_type") is not None:
+            scene_context["type"] = vision_result["scene_type"]
+        if vision_result.get("confidence") is not None:
+            scene_context["confidence"] = vision_result["confidence"]
         return self._create_alert(
             user_id=image_request["user_id"],
             device_id=image_request["device_id"],
@@ -38,6 +48,7 @@ class AlertService:
             lat=gps_snapshot.get("lat"),
             lng=gps_snapshot.get("lng"),
             distance_cm=vision_result.get("nearest_obstacle_cm"),
+            scene_context=scene_context,
             live_status="danger" if risk_level == "high" else "warning",
         )
 
@@ -114,6 +125,7 @@ class AlertService:
         lat: float | None = None,
         lng: float | None = None,
         distance_cm: float | None = None,
+        scene_context: dict[str, Any] | None = None,
         deduplicate: bool = True,
     ) -> dict[str, Any]:
         if deduplicate:
@@ -140,6 +152,7 @@ class AlertService:
             "lat": lat,
             "lng": lng,
             "distance_cm": distance_cm,
+            "scene_context": scene_context,
             "triggered_at": triggered_at,
             "resolved_at": None,
         }

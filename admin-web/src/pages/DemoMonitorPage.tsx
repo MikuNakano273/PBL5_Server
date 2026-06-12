@@ -59,7 +59,7 @@ export default function DemoMonitorPage() {
     <div className="page-title-row">
       <div>
         <h1>Demo Monitor</h1>
-        <p>Device {state?.device_id ?? "pbl5-01"}</p>
+        <p>Device {state?.device_id ?? "-"}</p>
       </div>
       <span className={`live-dot ${context?.fresh ? "live-dot-on" : ""}`}>{context?.fresh ? "Live" : "Stale"}</span>
     </div>

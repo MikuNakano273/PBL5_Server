@@ -5,10 +5,7 @@ from app.common.enums.user_role import UserRole
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
-    device_fingerprint: str = Field(min_length=3, max_length=255)
-    device_name: str = Field(min_length=1, max_length=255)
-    platform: str = Field(min_length=2, max_length=50)
+    password: str = Field(min_length=1, max_length=128)
 
 
 class RefreshRequest(BaseModel):

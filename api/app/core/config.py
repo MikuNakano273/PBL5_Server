@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     redis_db: int = Field(default=0, alias="REDIS_DB")
 
     minio_endpoint: str = Field(default="localhost:9000", alias="MINIO_ENDPOINT")
+    minio_public_endpoint: str | None = Field(default=None, alias="MINIO_PUBLIC_ENDPOINT")
     minio_access_key: str = Field(default="minioadmin", alias="MINIO_ACCESS_KEY")
     minio_secret_key: str = Field(default="minioadmin", alias="MINIO_SECRET_KEY")
     minio_bucket: str = Field(default="pbl5-images", alias="MINIO_BUCKET")

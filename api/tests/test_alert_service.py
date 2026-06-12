@@ -51,6 +51,7 @@ class AlertServiceTest(TestCase):
             "gps_snapshot": {"lat": 16.0544, "lng": 108.2022},
         }
         vision_result = {
+            "objects": [{"label": "chair", "confidence": 0.92}],
             "risk_level": "high",
             "summary_text": "Detected chair. Nearest obstacle 65 cm.",
             "nearest_obstacle_cm": 65,
@@ -68,6 +69,15 @@ class AlertServiceTest(TestCase):
         self.assertEqual(payload["lat"], 16.0544)
         self.assertEqual(payload["lng"], 108.2022)
         self.assertEqual(payload["distance_cm"], 65)
+        self.assertEqual(
+            payload["scene_context"],
+            {
+                "objects": [{"label": "chair", "confidence": 0.92}],
+                "risk_level": "high",
+                "nearest_obstacle_cm": 65,
+                "summary_text": "Detected chair. Nearest obstacle 65 cm.",
+            },
+        )
         self.assertEqual(service.user_live_status_repository.updated["current_safety_status"], "danger")
         self.assertEqual(service.user_live_status_repository.updated["last_alert_at"], vision_result["processed_at"])
         self.assertNotIn("notification", alert)
@@ -89,6 +99,29 @@ class AlertServiceTest(TestCase):
         self.assertEqual(alert["id"], "alert-existing")
         self.assertIsNone(service.alert_repository.created_payload)
         self.assertEqual(service.alert_repository.duplicate_query["since"], recorded_at - timedelta(seconds=300))
+
+    def test_create_alert_from_vision_result_keeps_demo_scene_type_and_confidence(self):
+        service = self._service()
+
+        result = service.create_alert_from_vision_result(
+            {
+                "_id": "request-1",
+                "user_id": "user-1",
+                "device_id": "device-1",
+                "gps_snapshot": None,
+            },
+            {
+                "objects": [],
+                "risk_level": "warning",
+                "summary_text": "Person detected.",
+                "scene_type": "person",
+                "confidence": 0.91,
+            },
+        )
+
+        context = result["alert"]["scene_context"]
+        self.assertEqual(context["type"], "person")
+        self.assertEqual(context["confidence"], 0.91)
 
     def test_create_alert_from_offline_device_marks_live_status_offline(self):
         service = self._service()

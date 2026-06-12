@@ -18,6 +18,14 @@ class DemoCaneApiTest(TestCase):
         )
         store_patcher.start()
         self.addCleanup(store_patcher.stop)
+        persistence_patcher = patch("app.api.routers.demo_cane.get_demo_frame_persistence_service")
+        persistence_service = persistence_patcher.start().return_value
+        persistence_service.persist_frame.return_value = {"persisted": True}
+        self.addCleanup(persistence_patcher.stop)
+        sensor_persistence_patcher = patch("app.api.routers.demo_cane.get_demo_sensor_persistence_service")
+        sensor_persistence_service = sensor_persistence_patcher.start().return_value
+        sensor_persistence_service.persist_sensor.return_value = {"persisted": True}
+        self.addCleanup(sensor_persistence_patcher.stop)
         self.client = TestClient(create_app())
 
     def _post_sensor(self):
@@ -61,6 +69,7 @@ class DemoCaneApiTest(TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.json()
         self.assertTrue(body["ok"])
+        self.assertTrue(body["persistence"]["persisted"])
         self.assertEqual(
             set(body["scene_context"]),
             {"type", "risk_level", "confidence", "age_ms", "fresh"},
@@ -93,6 +102,56 @@ class DemoCaneApiTest(TestCase):
             set(body["scene_context"]),
             {"type", "risk_level", "confidence", "age_ms", "fresh"},
         )
+
+    def test_state_without_device_id_returns_most_recent_frame_device(self):
+        self._post_frame()
+        self.client.post(
+            "/api/v1/frame",
+            data={
+                "device_id": "pbl5-02",
+                "type": "frame",
+                "cam_seq": "46",
+                "millis": "987655",
+            },
+            files={"image": ("newest.jpg", b"\xff\xd8newest\xff\xd9", "image/jpeg")},
+        )
+
+        response = self.client.get("/api/v1/state")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["device_id"], "pbl5-02")
+        self.assertEqual(body["latest_frame"]["frame_id"], "frame_46")
+
+    def test_state_without_device_id_returns_most_recent_sensor_device_without_frame(self):
+        response = self.client.post(
+            "/api/v1/sensor",
+            json={
+                "device_id": "sensor-only-cane",
+                "type": "sensor",
+                "seq": 901,
+                "millis": 654321,
+                "distance_cm": 38.5,
+                "distance_valid": True,
+                "obstacle_in_1m": True,
+                "alert_level": "danger",
+                "gps": {
+                    "fix": True,
+                    "lat": 16.123456,
+                    "lng": 108.654321,
+                    "sats": 7,
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+
+        state = self.client.get("/api/v1/state").json()
+
+        self.assertEqual(state["device_id"], "sensor-only-cane")
+        self.assertEqual(state["latest_sensor"]["seq"], 901)
+        self.assertEqual(state["latest_sensor"]["distance_cm"], 38.5)
+        self.assertEqual(state["latest_sensor"]["gps"]["lat"], 16.123456)
+        self.assertIsNone(state["latest_frame"]["frame_id"])
 
     def test_latest_frame_image_url_serves_uploaded_jpeg(self):
         self._post_sensor()
@@ -177,3 +236,21 @@ class DemoCaneApiTest(TestCase):
             self.assertEqual(detail["image_height"], 480)
             self.assertTrue((Path(temp_dir) / f"{frame_body['frame_id']}.jpg").is_file())
             self.assertTrue((Path(temp_dir) / f"{frame_body['frame_id']}.json").is_file())
+
+    def test_frame_upload_persists_admin_image_request_and_alert_data(self):
+        with patch("app.api.routers.demo_cane.get_demo_frame_persistence_service") as get_service:
+            service = get_service.return_value
+            service.persist_frame.return_value = {
+                "persisted": True,
+                "image_request_id": "request-1",
+                "alert": {"created": True, "id": "alert-1"},
+            }
+
+            response = self._post_frame()
+
+        self.assertEqual(response.status_code, 200)
+        service.persist_frame.assert_called_once()
+        call = service.persist_frame.call_args.kwargs
+        self.assertEqual(call["device_code"], "pbl5-01")
+        self.assertEqual(call["frame_id"], "frame_45")
+        self.assertEqual(call["image_url"], "/uploads/frame_45.jpg")

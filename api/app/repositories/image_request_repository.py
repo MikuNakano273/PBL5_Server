@@ -32,6 +32,16 @@ class ImageRequestRepository(BaseRepository):
             request_key = request_id
         return self.update_one({"_id": request_key}, payload)
 
+    def delete_by_id(self, request_id: str) -> int:
+        try:
+            request_key = ObjectId(request_id)
+        except InvalidId:
+            request_key = request_id
+        return self.collection.delete_one({"_id": request_key}).deleted_count
+
+    def get_by_request_code(self, request_code: str) -> dict[str, Any] | None:
+        return self.find_one({"request_code": request_code})
+
     def list_all(self, page: int = 1, limit: int = 20) -> list[dict[str, Any]]:
         skip = max(page - 1, 0) * limit
         return list(self.collection.find({}).sort("created_at", -1).skip(skip).limit(limit))

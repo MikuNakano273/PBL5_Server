@@ -1,4 +1,5 @@
 from unittest import TestCase
+from datetime import UTC, datetime
 
 from app.repositories.alert_repository import AlertRepository
 
@@ -33,3 +34,18 @@ class AlertRepositoryTest(TestCase):
 
         self.assertEqual(alert, {"_id": "alert-1", "title": "Obstacle"})
         self.assertEqual(collection.last_filter, {"_id": "alert-1"})
+
+    def test_image_alert_dedup_only_matches_same_image_request(self):
+        collection = _Collection([])
+        repository = AlertRepository(_Database(collection))
+
+        duplicate = repository.find_recent_duplicate(
+            "user-1",
+            "device-1",
+            "vision_obstacle",
+            datetime(2026, 6, 10, tzinfo=UTC),
+            image_request_id="request-new",
+        )
+
+        self.assertIsNone(duplicate)
+        self.assertEqual(collection.last_filter["image_request_id"], "request-new")

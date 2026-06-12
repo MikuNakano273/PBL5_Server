@@ -1,5 +1,6 @@
 import asyncio
 from datetime import UTC, datetime
+from pathlib import Path
 from unittest import TestCase
 
 from app.api.routers.admin import list_users
@@ -54,13 +55,25 @@ class _DeviceRepo:
 
 
 class _ImageRequestRepo:
+    def __init__(self):
+        self.deleted = []
+
     def list_all(self, page=1, limit=20):
         return [{"_id": "request-1", "status": "done", "ai_status": "done"}]
+
+    def delete_by_id(self, request_id):
+        self.deleted.append(request_id)
+        return 1
 
 
 class _AlertRepo:
     def list_all(self, page=1, limit=20):
         return [{"_id": "alert-1", "title": "Obstacle", "risk_level": "high"}]
+
+
+class _StorageService:
+    def get_presigned_download_url(self, image_path):
+        return f"https://images.example/{image_path}"
 
 
 class _AdminService:
@@ -76,6 +89,8 @@ class AdminServiceTest(TestCase):
         service.device_repository = _DeviceRepo()
         service.image_request_repository = _ImageRequestRepo()
         service.alert_repository = _AlertRepo()
+        service.storage_service = _StorageService()
+        service.pictures_dir = None
         return service
 
     def test_lists_admin_resources_with_serialized_ids_and_datetimes(self):
@@ -86,6 +101,32 @@ class AdminServiceTest(TestCase):
         self.assertEqual(service.list_devices()[0]["id"], "device-1")
         self.assertEqual(service.list_image_requests()[0]["id"], "request-1")
         self.assertEqual(service.list_alerts()[0]["id"], "alert-1")
+
+    def test_list_image_requests_adds_presigned_image_url(self):
+        service = self._service()
+        service.image_request_repository.list_all = lambda page=1, limit=20: [
+            {"_id": "request-1", "image_path": "raw/user-1/device-1/request-1.jpg"}
+        ]
+
+        request = service.list_image_requests()[0]
+
+        self.assertEqual(
+            request["image_url"],
+            "https://images.example/raw/user-1/device-1/request-1.jpg",
+        )
+
+    def test_list_image_requests_deletes_demo_request_when_local_image_is_missing(self):
+        service = self._service()
+        service.pictures_dir = Path("missing-pictures-directory")
+        service.image_request_repository.list_all = lambda page=1, limit=20: [
+            {"_id": "request-missing", "image_url": "/uploads/frame_missing.jpg"},
+            {"_id": "request-minio", "image_path": "raw/user-1/device-1/request-minio.jpg"},
+        ]
+
+        requests = service.list_image_requests()
+
+        self.assertEqual([request["id"] for request in requests], ["request-minio"])
+        self.assertEqual(service.image_request_repository.deleted, ["request-missing"])
 
     def test_update_user_and_assign_device_return_reloaded_documents(self):
         service = self._service()

@@ -1,7 +1,8 @@
 import type { DemoPicture, DemoState } from "./types";
 
-export async function getDemoState(deviceId = "pbl5-01"): Promise<DemoState> {
-  const response = await fetch(`/api/v1/state?device_id=${encodeURIComponent(deviceId)}`);
+export async function getDemoState(deviceId?: string): Promise<DemoState> {
+  const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : "";
+  const response = await fetch(`/api/v1/state${query}`);
   if (!response.ok) {
     throw new Error("Unable to load demo state");
   }

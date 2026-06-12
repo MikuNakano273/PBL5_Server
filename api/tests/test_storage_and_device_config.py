@@ -15,6 +15,10 @@ class _StorageClient:
         self.calls.append({"bucket": bucket, "object_key": object_key, "expires": expires})
         return f"http://minio/{bucket}/{object_key}"
 
+    def presigned_get_object(self, bucket, object_key, expires):
+        self.calls.append({"bucket": bucket, "object_key": object_key, "expires": expires})
+        return f"http://minio/{bucket}/{object_key}?download=1"
+
 
 class _Settings:
     minio_bucket = "pbl5-images"
@@ -66,6 +70,18 @@ class StorageAndDeviceConfigTest(TestCase):
         self.assertEqual(object_key, "raw/user-1/device-1/request-1.jpg")
         self.assertEqual(upload_url, "http://minio/pbl5-images/raw/user-1/device-1/request-1.jpg")
         self.assertEqual(storage_client.calls[0]["bucket"], "pbl5-images")
+        self.assertEqual(storage_client.calls[0]["expires"], timedelta(seconds=900))
+
+    def test_storage_service_builds_presigned_download_url(self):
+        storage_client = _StorageClient()
+        service = StorageService(storage_client=storage_client, settings=_Settings())
+
+        download_url = service.get_presigned_download_url("raw/user-1/device-1/request-1.jpg")
+
+        self.assertEqual(
+            download_url,
+            "http://minio/pbl5-images/raw/user-1/device-1/request-1.jpg?download=1",
+        )
         self.assertEqual(storage_client.calls[0]["expires"], timedelta(seconds=900))
 
     def test_attach_uploaded_image_defaults_to_standard_minio_object_path(self):

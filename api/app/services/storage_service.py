@@ -24,6 +24,25 @@ class StorageService:
             expires=timedelta(seconds=self.settings.image_upload_url_ttl_seconds),
         )
 
+    def get_presigned_download_url(self, object_key: str) -> str:
+        if self._owns_default_client:
+            ensure_bucket_exists()
+        storage_client = self.storage_client
+        public_endpoint = getattr(self.settings, "minio_public_endpoint", None)
+        if self._owns_default_client and public_endpoint:
+            storage_client = Minio(
+                public_endpoint,
+                access_key=self.settings.minio_access_key,
+                secret_key=self.settings.minio_secret_key,
+                secure=self.settings.minio_use_ssl,
+                region=self.settings.minio_region,
+            )
+        return storage_client.presigned_get_object(
+            self.settings.minio_bucket,
+            object_key,
+            expires=timedelta(seconds=self.settings.image_upload_url_ttl_seconds),
+        )
+
     def delete_raw_images_older_than(self, cutoff) -> int:
         deleted_count = 0
         for item in self.storage_client.list_objects(self.settings.minio_bucket, prefix="raw/", recursive=True):

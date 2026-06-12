@@ -9,8 +9,32 @@ export type User = Document & {
 
 export type Device = Document & {
   device_code?: string;
+  owner_user_id?: string;
+  status?: string;
+};
+
+export type ImageRequest = Document & {
+  device_id?: string;
   user_id?: string;
   status?: string;
+  created_at?: string;
+  image_url?: string;
+};
+
+export type AlertSceneContext = {
+  type?: string;
+  confidence?: number;
+  objects?: Array<{ label?: string; class?: string; confidence?: number }>;
+  risk_level?: string;
+  nearest_obstacle_cm?: number | null;
+  summary_text?: string;
+};
+
+export type Alert = Document & {
+  alert_type?: string;
+  risk_level?: string;
+  triggered_at?: string;
+  scene_context?: AlertSceneContext;
 };
 
 export type UserUpdate = Pick<User, "full_name" | "phone" | "status">;
